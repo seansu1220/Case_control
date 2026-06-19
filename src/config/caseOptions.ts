@@ -38,5 +38,8 @@ export const MANDATE_SCOPE_OPTIONS = [
   '調解程序',
 ] as const;
 
-/** 報稅狀態選項（結案後仍可修改的欄位）。 */
-export const TAX_STATUS_OPTIONS = ['', '已申報', '未申報', '免申報'] as const;
+/**
+ * 報稅狀態選項（結案後仍可修改的欄位）。
+ * 空字串（未填）於篩選與語意上一律視為「未申報」。
+ */
+export const TAX_STATUS_OPTIONS = ['', '已申報', '免申報', '未申報'] as const;

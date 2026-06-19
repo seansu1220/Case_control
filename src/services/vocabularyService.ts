@@ -29,12 +29,14 @@ function withoutCustomLabel(values: string[]): string[] {
 export const VOCABULARY_DEFAULTS: Record<VocabularyKey, readonly string[]> = {
   caseType: CASE_TYPE_OPTIONS,
   mandateScope: MANDATE_SCOPE_OPTIONS,
+  court: [],
 };
 
 /** 詞彙清單顯示名稱（管理頁用）。 */
 export const VOCABULARY_LABELS: Record<VocabularyKey, string> = {
   caseType: '案件類型',
   mandateScope: '委任範圍',
+  court: '地院/地檢',
 };
 
 /** 所有詞彙清單鍵。 */
@@ -48,6 +50,7 @@ export function defaultVocabularyMap(): VocabularyMap {
   return {
     caseType: [...VOCABULARY_DEFAULTS.caseType],
     mandateScope: [...VOCABULARY_DEFAULTS.mandateScope],
+    court: [...VOCABULARY_DEFAULTS.court],
   };
 }
 

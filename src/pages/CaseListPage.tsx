@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useCases } from '../hooks/useCases';
 import { useVocabularies } from '../hooks/useVocabularies';
-import { LIST_FIELDS } from '../config/caseFields';
+import { LIST_FIELDS, type FieldDef } from '../config/caseFields';
 import { TAX_STATUS_OPTIONS } from '../config/caseOptions';
 import type { CaseRecord } from '../types/case';
 import { Badge, Button, Card, CenteredSpinner, ErrorBanner } from '../components/ui';
@@ -36,6 +36,11 @@ function distinctValues(cases: CaseRecord[], pick: (c: CaseRecord) => string): s
 
 type LegalAidFilter = 'all' | 'yes' | 'no';
 
+// 列表欄位順序：日期→類型→當事人→案由→（目前進度）→其他（案號、地院/地檢）。
+const PRE_PROGRESS_KEYS = ['receiptDate', 'caseType', 'client', 'caseReason'];
+const PRE_FIELDS = LIST_FIELDS.filter((f) => PRE_PROGRESS_KEYS.includes(f.key));
+const POST_FIELDS = LIST_FIELDS.filter((f) => !PRE_PROGRESS_KEYS.includes(f.key));
+
 export function CaseListPage() {
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
@@ -66,7 +71,13 @@ export function CaseListPage() {
       ),
     [vocabularies.caseType, cases],
   );
-  const courtOptions = useMemo(() => distinctValues(cases, (c) => c.court), [cases]);
+  const courtOptions = useMemo(
+    () =>
+      Array.from(new Set([...vocabularies.court, ...distinctValues(cases, (c) => c.court)])).sort((a, b) =>
+        a.localeCompare(b, 'zh-Hant'),
+      ),
+    [vocabularies.court, cases],
+  );
   const lawyerOptions = useMemo(() => distinctValues(cases, (c) => c.responsibleLawyerName), [cases]);
 
   const filtered = useMemo(
@@ -83,7 +94,12 @@ export function CaseListPage() {
         if (legalAidFilter === 'yes' && !record.legalAid) return false;
         if (legalAidFilter === 'no' && record.legalAid) return false;
         if (taxFilter !== 'all') {
-          if (taxFilter === '未填' ? record.taxStatus !== '' : record.taxStatus !== taxFilter) return false;
+          // 未申報：含未填（空字串）。
+          if (taxFilter === '未申報') {
+            if (record.taxStatus !== '未申報' && record.taxStatus !== '') return false;
+          } else if (record.taxStatus !== taxFilter) {
+            return false;
+          }
         }
         return true;
       }),
@@ -240,7 +256,6 @@ export function CaseListPage() {
                     {opt}
                   </option>
                 ))}
-                <option value="未填">未填</option>
               </select>
             </div>
           </div>
@@ -296,17 +311,22 @@ export function CaseListPage() {
           onMouseMove={onMouseMove}
           onMouseUp={endDrag}
           onMouseLeave={endDrag}
-          className="cursor-grab overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm active:cursor-grabbing"
+          className="max-h-[70vh] cursor-grab overflow-auto rounded-xl border border-slate-200 bg-white shadow-sm active:cursor-grabbing"
         >
           <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="select-none bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <thead className="sticky top-0 z-10 select-none bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 shadow-sm">
               <tr>
-                {LIST_FIELDS.map((field) => (
+                {PRE_FIELDS.map((field) => (
                   <th key={field.key} className="whitespace-nowrap px-4 py-3">
                     {field.label}
                   </th>
                 ))}
                 <th className="whitespace-nowrap px-4 py-3">目前進度</th>
+                {POST_FIELDS.map((field) => (
+                  <th key={field.key} className="whitespace-nowrap px-4 py-3">
+                    {field.label}
+                  </th>
+                ))}
                 {canSeeOthers && <th className="whitespace-nowrap px-4 py-3">負責律師</th>}
                 <th className="whitespace-nowrap px-4 py-3">結案</th>
               </tr>
@@ -318,16 +338,8 @@ export function CaseListPage() {
                   onClick={() => handleRowClick(record.id)}
                   className="cursor-pointer hover:bg-slate-50"
                 >
-                  {LIST_FIELDS.map((field) => (
-                    <td
-                      key={field.key}
-                      className={`truncate px-4 py-3 text-slate-700 ${field.listWidthClass ?? 'max-w-[10rem]'}`}
-                    >
-                      {field.key === 'caseType' && record.legalAid && (
-                        <span className="mr-1 rounded bg-amber-100 px-1 text-xs text-amber-700">法扶</span>
-                      )}
-                      {record[field.key] || '—'}
-                    </td>
+                  {PRE_FIELDS.map((field) => (
+                    <ListCell key={field.key} field={field} record={record} />
                   ))}
                   <td
                     className="min-w-[18rem] max-w-[24rem] truncate px-4 py-3 text-slate-600"
@@ -335,8 +347,14 @@ export function CaseListPage() {
                   >
                     {latestProgress(record) || '—'}
                   </td>
+                  {POST_FIELDS.map((field) => (
+                    <ListCell key={field.key} field={field} record={record} />
+                  ))}
                   {canSeeOthers && (
-                    <td className="max-w-[7rem] truncate px-4 py-3 text-slate-700">
+                    <td
+                      className="max-w-[7rem] truncate px-4 py-3 text-slate-700"
+                      title={record.responsibleLawyerName}
+                    >
                       {record.responsibleLawyerName || '—'}
                     </td>
                   )}
@@ -350,6 +368,34 @@ export function CaseListPage() {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * 列表單一資料格。
+ * - listFull 欄位（日期/類型/當事人）完整顯示不截斷。
+ * - 其餘欄位截斷並以 title 提供滑鼠移上的完整內容提示。
+ */
+function ListCell({ field, record }: { field: FieldDef; record: CaseRecord }) {
+  const value = record[field.key];
+  const text = value ? String(value) : '';
+  const legalAidTag = field.key === 'caseType' && record.legalAid && (
+    <span className="mr-1 rounded bg-amber-100 px-1 text-xs text-amber-700">法扶</span>
+  );
+
+  if (field.listFull) {
+    return (
+      <td className="whitespace-nowrap px-4 py-3 text-slate-700">
+        {legalAidTag}
+        {text || '—'}
+      </td>
+    );
+  }
+  return (
+    <td className={`truncate px-4 py-3 text-slate-700 ${field.listWidthClass ?? 'max-w-[10rem]'}`} title={text}>
+      {legalAidTag}
+      {text || '—'}
+    </td>
   );
 }
 

@@ -11,7 +11,7 @@ import { TAX_STATUS_OPTIONS } from './caseOptions';
 export type FieldInputType = 'text' | 'textarea' | 'date' | 'datetime' | 'select' | 'tel';
 
 /** 詞彙清單鍵（對應 Firestore vocabularies/{key}）。 */
-export type VocabularyKey = 'caseType' | 'mandateScope';
+export type VocabularyKey = 'caseType' | 'mandateScope' | 'court';
 
 /**
  * 可由「字串型」表單欄位編輯的案件鍵（排除系統欄位、進度紀錄與布林旗標）。
@@ -48,6 +48,8 @@ export interface FieldDef {
   showInList?: boolean;
   /** 列表欄位的寬度上限樣式（控制各格大小，重要欄寬、次要欄窄）。 */
   listWidthClass?: string;
+  /** 列表是否完整顯示不截斷（短欄如日期/類型/當事人）。 */
+  listFull?: boolean;
   /**
    * 結案後是否仍可編輯。
    * 依需求：結案後僅「報稅」可改，其餘鎖定。
@@ -61,15 +63,15 @@ export interface FieldDef {
  * 註：原「處理 / 結果 / 狀態」已併入進度管理，不在此列。
  */
 export const CASE_FIELDS: FieldDef[] = [
-  { key: 'receiptDate', label: '收件日', inputType: 'date', showInList: true, listWidthClass: 'max-w-[6rem]' },
-  { key: 'caseType', label: '類型', inputType: 'select', vocabKey: 'caseType', allowCustom: true, required: true, showInList: true, listWidthClass: 'max-w-[5rem]' },
-  { key: 'client', label: '當事人', inputType: 'text', required: true, showInList: true, listWidthClass: 'max-w-[8rem]' },
+  { key: 'receiptDate', label: '收件日', inputType: 'date', showInList: true, listFull: true },
+  { key: 'caseType', label: '類型', inputType: 'select', vocabKey: 'caseType', allowCustom: true, required: true, showInList: true, listFull: true },
+  { key: 'client', label: '當事人', inputType: 'text', required: true, showInList: true, listFull: true },
   { key: 'opposingParty', label: '對造', inputType: 'text' },
   { key: 'caseReason', label: '案由', inputType: 'text', showInList: true, listWidthClass: 'max-w-[11rem]' },
   { key: 'phone', label: '電話', inputType: 'tel' },
   { key: 'caseNumber', label: '案號', inputType: 'text', showInList: true, listWidthClass: 'max-w-[6rem]' },
   { key: 'address', label: '住址', inputType: 'textarea' },
-  { key: 'court', label: '地院/地檢', inputType: 'text', showInList: true, listWidthClass: 'max-w-[7rem]' },
+  { key: 'court', label: '地院/地檢', inputType: 'select', vocabKey: 'court', allowCustom: true, showInList: true, listWidthClass: 'max-w-[7rem]' },
   { key: 'mandateDate', label: '委任狀遞出時間', inputType: 'datetime' },
   { key: 'mandateScope', label: '委任範圍', inputType: 'select', vocabKey: 'mandateScope', allowCustom: true },
   {

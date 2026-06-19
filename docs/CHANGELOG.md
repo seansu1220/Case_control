@@ -2,6 +2,28 @@
 
 本檔透過 git 同步，供多台電腦查閱歷史紀錄。
 
+## 2026-06-19 — 列表欄序/固定表頭、報稅語意、地院詞彙化、移除遷移
+
+### 問題描述
+1. 列表「日期/類型/當事人」需完整顯示不截斷；欄序調整為
+   日期→類型→當事人→案由→目前進度→其他；被截斷者滑鼠移上顯示完整內容。
+2. 列表向下捲動時表頭列需固定。
+3. 報稅狀態改為：已申報、免申報、未申報（未填亦視為未申報）。
+4. 移除「舊資料遷移」功能（已不需要）。
+5. 「地院/地檢」改為與類型相同的詞彙管理形式。
+
+### 修改的檔案與內容
+- `config/caseFields.ts`：新增 listFull 旗標（日期/類型/當事人完整顯示）；
+  court 改為詞彙型 select（vocabKey: court、可自訂）；VocabularyKey 加 court。
+- `config/caseOptions.ts`：TAX_STATUS_OPTIONS 調整為 ''/已申報/免申報/未申報。
+- `services/vocabularyService.ts`：VOCABULARY_DEFAULTS / LABELS / defaultVocabularyMap
+  加入 court（地院/地檢，種子為空，由管理者新增）。
+- `pages/CaseListPage.tsx`：欄序拆為「進度前/後」兩段並於中間插入目前進度；
+  listFull 欄完整顯示、其餘截斷加 title 提示；表頭 sticky 固定、容器改
+  max-h + overflow-auto；報稅篩選未申報含未填；地院選項併入詞彙。
+- `pages/VocabularyAdminPage.tsx`：移除舊資料遷移卡片（地院詞彙編輯自動出現）。
+- 刪除 `services/migrationService.ts`。
+
 ## 2026-06-19 — 欄位精簡、法扶旗標、列表版面與多條件篩選
 
 ### 問題描述

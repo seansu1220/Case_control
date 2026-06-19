@@ -1,13 +1,10 @@
 /**
  * 詞彙管理頁（限管理者）。
  *
- * - 管理「類型」「委任範圍」等下拉選項：新增、改名、刪除。
- * - 提供「舊資料遷移」一鍵作業：轉換民國日期、把處理/結果/狀態併入進度、初始化詞彙。
- *
+ * 管理「類型」「委任範圍」「地院/地檢」等下拉選項：新增、改名、刪除。
  * 刪除選項不影響已使用該值的案件，只是日後下拉不再提供。
  */
 import { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
 import { useVocabularies } from '../hooks/useVocabularies';
 import {
   addVocabularyValue,
@@ -16,12 +13,10 @@ import {
   VOCABULARY_KEYS,
   VOCABULARY_LABELS,
 } from '../services/vocabularyService';
-import { runMigration, type MigrationResult } from '../services/migrationService';
 import type { VocabularyKey } from '../config/caseFields';
 import { Button, Card, ErrorBanner } from '../components/ui';
 
 export function VocabularyAdminPage() {
-  const { user } = useAuth();
   const { vocabularies } = useVocabularies();
   const [error, setError] = useState<string | null>(null);
 
@@ -38,8 +33,6 @@ export function VocabularyAdminPage() {
       {VOCABULARY_KEYS.map((key) => (
         <VocabularyEditor key={key} vocabKey={key} values={vocabularies[key] ?? []} onError={setError} />
       ))}
-
-      {user && <MigrationCard currentUser={user} />}
     </div>
   );
 }
@@ -170,65 +163,6 @@ function VocabularyEditor({
           className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none sm:max-w-xs"
         />
         <Button onClick={handleAdd}>新增</Button>
-      </div>
-    </Card>
-  );
-}
-
-/** 舊資料遷移卡片。 */
-function MigrationCard({ currentUser }: { currentUser: Parameters<typeof runMigration>[0] }) {
-  const [running, setRunning] = useState(false);
-  const [result, setResult] = useState<MigrationResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleRun() {
-    if (
-      !window.confirm(
-        '將轉換所有案件的民國日期、把「處理/結果/狀態」併入進度管理，並初始化詞彙清單。\n此作業可安全重複執行（已遷移的會略過）。確定執行？',
-      )
-    )
-      return;
-    setRunning(true);
-    setError(null);
-    try {
-      const r = await runMigration(currentUser);
-      setResult(r);
-    } catch (err) {
-      setError(`遷移失敗：${(err as Error).message}`);
-    } finally {
-      setRunning(false);
-    }
-  }
-
-  return (
-    <Card className="space-y-3 border-amber-200 bg-amber-50">
-      <h2 className="text-base font-semibold text-slate-700">舊資料遷移</h2>
-      <p className="text-sm text-slate-600">
-        將既有案件的民國日期轉為西元、把「處理 / 結果 / 狀態」併入進度紀錄、並以現有資料初始化詞彙清單。
-        只需執行一次（重複執行會自動略過已處理的案件）。
-      </p>
-      <ErrorBanner message={error} />
-      {result && (
-        <div className="rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-700">
-          <p>案件總數：{result.total}</p>
-          <p>本次遷移：{result.migrated}，略過（已遷移）：{result.skipped}</p>
-          <p>日期轉換：{result.dateConverted}，新增進度紀錄：{result.entriesCreated}</p>
-          {result.unparseableDates.length > 0 && (
-            <div className="mt-1 text-amber-700">
-              <p>下列日期無法自動解析，已保留原值請手動檢查：</p>
-              <ul className="list-disc pl-5">
-                {result.unparseableDates.slice(0, 20).map((d, i) => (
-                  <li key={i}>{d}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
-      <div>
-        <Button onClick={handleRun} disabled={running}>
-          {running ? '遷移中…' : '執行遷移'}
-        </Button>
       </div>
     </Card>
   );
