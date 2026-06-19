@@ -35,9 +35,12 @@ src/
   context/    驗證狀態 Provider
   components/  純 UI 元件
   pages/      頁面
-tools/        Python 匯入工具
-firestore.rules        資料庫安全規則
-firebase.json          Hosting 與 Firestore 部署設定
+firebase/     firestore.rules（安全規則）、firestore.indexes.json
+tools/        Python 匯入工具與 requirements.txt
+data/         當事人案件 Excel（不進版控）
+firebase.json / .firebaserc   Firebase 部署設定（須置於根目錄）
+其餘根目錄檔：package.json、vite.config.ts、tsconfig*.json、index.html、.env
+             （前端工具鏈規定須放根目錄，故不另歸類）
 ```
 
 ---

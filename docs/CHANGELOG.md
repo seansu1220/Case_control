@@ -2,6 +2,25 @@
 
 本檔透過 git 同步，供多台電腦查閱歷史紀錄。
 
+## 2026-06-19 — 根目錄分門別類整理
+
+### 問題描述
+專案根目錄檔案過多，需分類整理使結構清楚。
+
+### 根本原因 / 設計決策
+前端與 Firebase 工具鏈規定部分檔案須置於根目錄（package.json、vite.config.ts、
+tsconfig*、index.html、.env、firebase.json、.firebaserc），強行搬移會破壞建置與部署，
+故保留於根目錄；其餘可安全歸類者移入專屬資料夾。
+
+### 修改的檔案與內容
+- 新增 `firebase/`：移入 `firestore.rules`、`firestore.indexes.json`，
+  並更新 `firebase.json` 的 `rules`/`indexes` 路徑。
+- 新增 `data/`：移入當事人 Excel（仍由 .gitignore 排除）；
+  更新 `tools/import_cases.py` 的 `--excel` 預設為 `data/蘇律師案件總表.xlsx`。
+- `requirements.txt` 移入 `tools/`（僅匯入工具使用）；
+  更新 `import_cases.py` 自動安裝的路徑參照。
+- 更新 `README.md` 目錄結構說明。
+
 ## 2026-06-19 — 專案初版建立
 
 ### 問題描述

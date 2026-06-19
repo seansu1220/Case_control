@@ -11,7 +11,7 @@
         --service-account serviceAccountKey.json \
         --owner-uid <蘇律師帳號的 Firebase Auth UID> \
         --owner-name 蘇律師 \
-        [--excel 蘇律師案件總表.xlsx] [--dry-run]
+        [--excel data/蘇律師案件總表.xlsx] [--dry-run]
 
 取得 owner-uid：請蘇律師先在系統「註冊」一個帳號，
 到 Firebase 主控台 → Authentication → 使用者，複製該帳號的 UID。
@@ -32,7 +32,7 @@ def ensure_dependencies() -> None:
         import openpyxl  # noqa: F401
         import firebase_admin  # noqa: F401
     except ImportError:
-        req = Path(__file__).resolve().parent.parent / "requirements.txt"
+        req = Path(__file__).resolve().parent / "requirements.txt"
         print("偵測到缺少依賴，正在安裝 requirements.txt …")
         subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", str(req)])
         print("依賴安裝完成。\n")
@@ -161,7 +161,7 @@ def write_to_firestore(docs: list[dict], service_account: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="匯入案件總表至 Firestore")
-    parser.add_argument("--excel", default="蘇律師案件總表.xlsx", help="Excel 檔路徑")
+    parser.add_argument("--excel", default="data/蘇律師案件總表.xlsx", help="Excel 檔路徑")
     parser.add_argument("--service-account", default="serviceAccountKey.json", help="Firebase 服務金鑰 JSON")
     parser.add_argument("--owner-uid", required=True, help="負責律師帳號的 Firebase Auth UID")
     parser.add_argument("--owner-name", default="蘇律師", help="負責律師顯示姓名")
