@@ -2,7 +2,7 @@
  * 驗證狀態 Provider。
  * 監聽 Firebase 登入狀態，載入對應的使用者資料文件，提供給整個 App。
  */
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { fetchUserProfile } from '../services/authService';
@@ -34,9 +34,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
+  // 重新抓取目前登入者的資料文件（改名後刷新顯示）。
+  const refreshUser = useCallback(async () => {
+    if (!auth.currentUser) return;
+    const profile = await fetchUserProfile(auth.currentUser.uid);
+    setUser(profile && profile.active ? profile : null);
+  }, []);
+
   const value = useMemo<AuthContextValue>(
-    () => ({ user, loading, isAdmin: user?.role === ROLES.admin }),
-    [user, loading],
+    () => ({ user, loading, isAdmin: user?.role === ROLES.admin, refreshUser }),
+    [user, loading, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

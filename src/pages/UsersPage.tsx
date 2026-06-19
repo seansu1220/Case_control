@@ -1,6 +1,7 @@
 /** 使用者管理頁（限管理者）：調整角色、律師姓名、啟用狀態。 */
 import { useEffect, useState } from 'react';
 import { listUsers, updateUserActive, updateUserLawyerName, updateUserRole } from '../services/userService';
+import { fetchCaseCountsByLawyer } from '../services/caseService';
 import { useAuth } from '../hooks/useAuth';
 import { ROLES } from '../config/constants';
 import type { AppUser, UserRole } from '../types/user';
@@ -9,12 +10,15 @@ import { Badge, Card, CenteredSpinner, ErrorBanner } from '../components/ui';
 export function UsersPage() {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<AppUser[]>([]);
+  const [counts, setCounts] = useState<Record<string, { total: number; open: number; closed: number }>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   async function reload() {
     try {
-      setUsers(await listUsers());
+      const [allUsers, caseCounts] = await Promise.all([listUsers(), fetchCaseCountsByLawyer()]);
+      setUsers(allUsers);
+      setCounts(caseCounts);
       setError(null);
     } catch (err) {
       setError(`載入使用者失敗：${(err as Error).message}`);
@@ -50,6 +54,7 @@ export function UsersPage() {
             <tr>
               <th className="px-4 py-3">姓名 / Email</th>
               <th className="px-4 py-3">律師姓名</th>
+              <th className="px-4 py-3">案件數</th>
               <th className="px-4 py-3">角色</th>
               <th className="px-4 py-3">狀態</th>
             </tr>
@@ -57,6 +62,7 @@ export function UsersPage() {
           <tbody className="divide-y divide-slate-100">
             {users.map((item) => {
               const isSelf = item.uid === currentUser?.uid;
+              const count = counts[item.uid] ?? { total: 0, open: 0, closed: 0 };
               return (
                 <tr key={item.uid}>
                   <td className="px-4 py-3">
@@ -76,6 +82,12 @@ export function UsersPage() {
                       }}
                       className="w-32 rounded-lg border border-slate-300 px-2 py-1 text-sm focus:border-slate-500 focus:outline-none"
                     />
+                  </td>
+                  <td className="px-4 py-3 text-slate-700">
+                    <span className="font-medium">{count.total}</span>
+                    <span className="ml-1 text-xs text-slate-400">
+                      （進行 {count.open} / 結案 {count.closed}）
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     <select

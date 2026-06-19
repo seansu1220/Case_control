@@ -32,8 +32,14 @@ service cloud.firestore {
         && request.resource.data.role == 'lawyer'
         && request.resource.data.active == true;
 
-      // 角色 / 律師姓名 / 啟用狀態僅限管理者調整。
-      allow update, delete: if isAdmin();
+      // 更新：管理者不受限；本人僅能改自己的顯示名稱與律師姓名
+      //（不得自行變更 role / active，防止提權）。
+      allow update: if isAdmin()
+        || (request.auth.uid == uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'lawyerName']));
+
+      // 刪除使用者僅限管理者。
+      allow delete: if isAdmin();
     }
 
     // ── 案件 ──

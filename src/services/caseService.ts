@@ -10,6 +10,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDocs,
   onSnapshot,
   query,
   serverTimestamp,
@@ -119,6 +120,27 @@ export function subscribeCase(
     },
     (error) => onError(new Error(`讀取案件失敗：${error.message}`)),
   );
+}
+
+/**
+ * 統計每位律師的案件數（含未結案/已結案分項）。供管理者頁面顯示。
+ * 需管理者權限（讀取全部案件）。
+ * @returns 以 responsibleLawyerUid 為鍵的統計
+ */
+export async function fetchCaseCountsByLawyer(): Promise<
+  Record<string, { total: number; open: number; closed: number }>
+> {
+  const snapshot = await getDocs(collection(db, COLLECTIONS.cases));
+  const counts: Record<string, { total: number; open: number; closed: number }> = {};
+  for (const docSnap of snapshot.docs) {
+    const data = docSnap.data();
+    const uid = data.responsibleLawyerUid ?? '';
+    if (!counts[uid]) counts[uid] = { total: 0, open: 0, closed: 0 };
+    counts[uid].total += 1;
+    if (data.closed) counts[uid].closed += 1;
+    else counts[uid].open += 1;
+  }
+  return counts;
 }
 
 /** 新增案件，負責律師資訊與時間戳由系統填入。 */

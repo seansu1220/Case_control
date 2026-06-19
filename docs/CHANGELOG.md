@@ -2,6 +2,23 @@
 
 本檔透過 git 同步，供多台電腦查閱歷史紀錄。
 
+## 2026-06-20 — 個人改名功能與管理頁案件數統計
+
+### 問題描述
+1. Google 登入帶入的名稱可能非本名，使用者需能自行改名。
+2. 使用者管理頁需顯示每位律師的案件數。
+
+### 修改的檔案與內容
+- `firebase/firestore.rules`：users 更新規則放寬——本人可改自己的
+  `displayName` / `lawyerName`（仍禁止自行變更 role/active）。
+- `src/services/userService.ts`：新增 `updateOwnProfile`。
+- `src/services/caseService.ts`：新增 `fetchCaseCountsByLawyer`（統計每位律師
+  總數/進行中/已結案）。
+- `src/context/authContext.ts`、`AuthProvider.tsx`：新增 `refreshUser`，改名後即時刷新。
+- 新增 `src/pages/ProfilePage.tsx`（個人設定）、`App.tsx` 加 `/profile` 路由、
+  `Layout.tsx` 右上角姓名可點進個人設定。
+- `src/pages/UsersPage.tsx`：新增「案件數」欄位。
+
 ## 2026-06-19 — 快取策略與 Google 登入彈窗修正
 
 ### 問題描述

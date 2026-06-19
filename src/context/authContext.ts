@@ -12,6 +12,8 @@ export interface AuthContextValue {
   loading: boolean;
   /** 是否為管理者。 */
   isAdmin: boolean;
+  /** 重新載入目前使用者的資料（例如改名後刷新顯示）。 */
+  refreshUser: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);

@@ -8,6 +8,7 @@ import { CaseListPage } from './pages/CaseListPage';
 import { NewCasePage } from './pages/NewCasePage';
 import { CaseDetailPage } from './pages/CaseDetailPage';
 import { UsersPage } from './pages/UsersPage';
+import { ProfilePage } from './pages/ProfilePage';
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
         }
       >
         <Route index element={<CaseListPage />} />
+        <Route path="profile" element={<ProfilePage />} />
         <Route path="cases/new" element={<NewCasePage />} />
         <Route path="cases/:caseId" element={<CaseDetailPage />} />
         <Route

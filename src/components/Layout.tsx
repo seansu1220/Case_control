@@ -37,13 +37,13 @@ export function Layout() {
               </NavLink>
             )}
           </nav>
-          <div className="flex items-center gap-3 text-sm text-slate-600">
-            <span className="hidden sm:inline">
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            <NavLink to="/profile" className={navItemClass} title="個人設定（改名）">
               {user?.displayName}
               <span className="ml-1 text-xs text-slate-400">
                 （{isAdmin ? '管理者' : '律師'}）
               </span>
-            </span>
+            </NavLink>
             <Button variant="ghost" onClick={handleLogout}>
               登出
             </Button>

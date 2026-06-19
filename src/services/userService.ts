@@ -36,6 +36,20 @@ export async function updateUserLawyerName(uid: string, lawyerName: string): Pro
   await updateDoc(doc(db, COLLECTIONS.users, uid), { lawyerName });
 }
 
+/**
+ * 更新自己的個人資料（顯示名稱與律師姓名）。
+ * 安全規則僅允許本人變更這兩個欄位，不可改 role/active。
+ */
+export async function updateOwnProfile(
+  uid: string,
+  fields: { displayName: string; lawyerName: string },
+): Promise<void> {
+  await updateDoc(doc(db, COLLECTIONS.users, uid), {
+    displayName: fields.displayName,
+    lawyerName: fields.lawyerName,
+  });
+}
+
 /** 啟用/停用帳號。 */
 export async function updateUserActive(uid: string, active: boolean): Promise<void> {
   await updateDoc(doc(db, COLLECTIONS.users, uid), { active });
