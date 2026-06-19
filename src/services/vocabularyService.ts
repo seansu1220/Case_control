@@ -18,7 +18,12 @@ import {
 import { db } from '../lib/firebase';
 import { COLLECTIONS } from '../config/constants';
 import type { VocabularyKey } from '../config/caseFields';
-import { CASE_TYPE_OPTIONS, MANDATE_SCOPE_OPTIONS } from '../config/caseOptions';
+import { CASE_TYPE_OPTIONS, CUSTOM_OPTION_LABEL, MANDATE_SCOPE_OPTIONS } from '../config/caseOptions';
+
+/** 過濾掉保留字「其他」（自訂入口由下拉內建提供，不列為可刪選項）。 */
+function withoutCustomLabel(values: string[]): string[] {
+  return values.filter((v) => v !== CUSTOM_OPTION_LABEL);
+}
 
 /** 各詞彙清單的預設種子值（首次建立時寫入）。 */
 export const VOCABULARY_DEFAULTS: Record<VocabularyKey, readonly string[]> = {
@@ -63,7 +68,7 @@ export function subscribeVocabularies(
         const key = docSnap.id as VocabularyKey;
         if (!(key in map)) continue;
         const values = docSnap.data().values;
-        if (Array.isArray(values)) map[key] = values as string[];
+        if (Array.isArray(values)) map[key] = withoutCustomLabel(values as string[]);
       }
       onData(map);
     },
@@ -75,6 +80,7 @@ export function subscribeVocabularies(
 export async function addVocabularyValue(key: VocabularyKey, value: string): Promise<void> {
   const trimmed = value.trim();
   if (!trimmed) throw new Error('選項內容不可空白。');
+  if (trimmed === CUSTOM_OPTION_LABEL) return; // 「其他」為內建入口，不需也不可加入清單。
   // 以 merge + arrayUnion 確保文件不存在時自動建立、存在時去重附加。
   await setDoc(
     doc(db, COLLECTIONS.vocabularies, key),

@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { fetchUserProfile } from '../services/authService';
-import { ROLES } from '../config/constants';
+import { ADMIN_ROLES, ROLES } from '../config/constants';
 import type { AppUser } from '../types/user';
 import { AuthContext, type AuthContextValue } from './authContext';
 
@@ -42,7 +42,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, loading, isAdmin: user?.role === ROLES.admin, refreshUser }),
+    () => ({
+      user,
+      loading,
+      isAdmin: user ? ADMIN_ROLES.includes(user.role) : false,
+      isOwner: user?.role === ROLES.owner,
+      refreshUser,
+    }),
     [user, loading, refreshUser],
   );
 

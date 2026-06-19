@@ -17,6 +17,7 @@ export async function listUsers(): Promise<AppUser[]> {
       displayName: data.displayName ?? '',
       lawyerName: data.lawyerName ?? data.displayName ?? '',
       role: (data.role ?? 'lawyer') as UserRole,
+      viewAllCases: data.viewAllCases ?? true,
       active: data.active ?? true,
       createdAt:
         typeof data.createdAt?.toDate === 'function'
@@ -53,4 +54,9 @@ export async function updateOwnProfile(
 /** 啟用/停用帳號。 */
 export async function updateUserActive(uid: string, active: boolean): Promise<void> {
   await updateDoc(doc(db, COLLECTIONS.users, uid), { active });
+}
+
+/** 設定該使用者是否可檢視其他律師的案件。 */
+export async function updateUserViewAllCases(uid: string, viewAllCases: boolean): Promise<void> {
+  await updateDoc(doc(db, COLLECTIONS.users, uid), { viewAllCases });
 }

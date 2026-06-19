@@ -49,6 +49,7 @@ async function ensureUserDoc(uid: string, email: string, displayName: string): P
     displayName,
     lawyerName: displayName,
     role: DEFAULT_ROLE,
+    viewAllCases: true,
     active: true,
     createdAt: serverTimestamp(),
   });
@@ -87,6 +88,7 @@ export async function register({ email, password, displayName }: RegisterInput):
       displayName,
       lawyerName: displayName,
       role: DEFAULT_ROLE,
+      viewAllCases: true,
       active: true,
       createdAt: serverTimestamp(),
     };
@@ -121,6 +123,7 @@ export async function fetchUserProfile(uid: string): Promise<AppUser | null> {
     displayName: data.displayName ?? '',
     lawyerName: data.lawyerName ?? data.displayName ?? '',
     role: data.role ?? DEFAULT_ROLE,
+    viewAllCases: data.viewAllCases ?? true,
     active: data.active ?? true,
     createdAt:
       typeof data.createdAt?.toDate === 'function'

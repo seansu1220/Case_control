@@ -13,33 +13,38 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
+    // 具管理權限：管理者或所有人。
     function isAdmin() {
       return isSignedIn()
         && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && callerData().role == 'admin';
+        && (callerData().role == 'admin' || callerData().role == 'owner');
     }
 
     // ── 使用者 ──
     match /users/{uid} {
-      // 只能讀自己的資料；管理者可讀全部。
+      // 只能讀自己的資料；管理者/所有人可讀全部。
       allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
 
-      // 自行註冊：只能建立自己的文件，且角色強制為 lawyer、預設啟用，
-      // 防止自我提權為管理者。
+      // 自行註冊：只能建立自己的文件，且角色強制為 lawyer、預設啟用、預設可看全部，
+      // 防止自我提權為管理者/所有人。
       allow create: if isSignedIn()
         && request.auth.uid == uid
         && request.resource.data.uid == uid
         && request.resource.data.role == 'lawyer'
         && request.resource.data.active == true;
 
-      // 更新：管理者不受限；本人僅能改自己的顯示名稱與律師姓名
-      //（不得自行變更 role / active，防止提權）。
-      allow update: if isAdmin()
-        || (request.auth.uid == uid
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'lawyerName']));
+      // 更新：
+      //  - 本人僅能改自己的顯示名稱與律師姓名（含所有人，但不得改 role/active）。
+      //  - 管理者/所有人可管理他人，但「所有人」帳號受保護：不可被修改，
+      //    且不得將任何人提權為 owner（owner 僅能於主控台手動指派）。
+      allow update: if (request.auth.uid == uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'lawyerName']))
+        || (isAdmin()
+            && resource.data.role != 'owner'
+            && request.resource.data.role != 'owner');
 
-      // 刪除使用者僅限管理者。
-      allow delete: if isAdmin();
+      // 刪除使用者：管理者/所有人可刪，但不可刪除「所有人」帳號。
+      allow delete: if isAdmin() && resource.data.role != 'owner';
     }
 
     // ── 案件 ──
@@ -48,8 +53,15 @@ service cloud.firestore {
         return isSignedIn() && resource.data.responsibleLawyerUid == request.auth.uid;
       }
 
-      // 律師只能讀自己負責的案件；管理者可讀全部。
-      allow read: if isAdmin() || isOwner();
+      // 可看全部案件者：開啟 viewAllCases 的登入者（預設開啟）。
+      function canViewAll() {
+        return isSignedIn()
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && callerData().get('viewAllCases', true) == true;
+      }
+
+      // 管理者/所有人可讀全部；律師讀自己負責的，或在 viewAllCases 開啟時讀全部。
+      allow read: if isAdmin() || isOwner() || canViewAll();
 
       // 新增：建立者必須是自己；負責律師須為自己，或由管理者代為指派。
       allow create: if isSignedIn()

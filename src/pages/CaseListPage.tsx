@@ -16,6 +16,15 @@ function matchesKeyword(record: CaseRecord, keyword: string): boolean {
   return haystack.includes(keyword.toLowerCase());
 }
 
+/** 取最新一筆進度（依日期+時間排序）的顯示文字，供列表「目前進度」欄。 */
+function latestProgress(record: CaseRecord): string {
+  if (record.progressEntries.length === 0) return '';
+  const latest = [...record.progressEntries].sort((a, b) =>
+    `${b.date} ${b.time ?? ''}`.localeCompare(`${a.date} ${a.time ?? ''}`),
+  )[0];
+  return `${latest.date}　${latest.content}`;
+}
+
 export function CaseListPage() {
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
@@ -79,6 +88,7 @@ export function CaseListPage() {
                     {field.label}
                   </th>
                 ))}
+                <th className="whitespace-nowrap px-4 py-3">目前進度</th>
                 {isAdmin && <th className="whitespace-nowrap px-4 py-3">負責律師</th>}
                 <th className="whitespace-nowrap px-4 py-3">結案</th>
               </tr>
@@ -95,6 +105,9 @@ export function CaseListPage() {
                       {record[field.key] || '—'}
                     </td>
                   ))}
+                  <td className="max-w-[18rem] truncate px-4 py-3 text-slate-600" title={latestProgress(record)}>
+                    {latestProgress(record) || '—'}
+                  </td>
                   {isAdmin && (
                     <td className="whitespace-nowrap px-4 py-3 text-slate-700">
                       {record.responsibleLawyerName || '—'}

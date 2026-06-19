@@ -21,9 +21,14 @@ import {
   type QueryDocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { COLLECTIONS, ROLES } from '../config/constants';
+import { ADMIN_ROLES, COLLECTIONS } from '../config/constants';
 import type { CaseDraft, CaseRecord, ProgressEntry } from '../types/case';
 import type { AppUser } from '../types/user';
+
+/** 是否可檢視全部案件：管理者/所有人，或開啟 viewAllCases 的律師。 */
+function canViewAllCases(user: AppUser): boolean {
+  return ADMIN_ROLES.includes(user.role) || user.viewAllCases !== false;
+}
 
 /** Firestore Timestamp / 字串 → ISO 字串。 */
 function toIso(value: unknown): string {
@@ -73,8 +78,8 @@ function byReceiptDateDesc(a: CaseRecord, b: CaseRecord): number {
 
 /**
  * 訂閱案件即時更新。
- * - 管理者：所有案件
- * - 律師：僅 responsibleLawyerUid 等於自己的案件
+ * - 管理者 / 所有人，或 viewAllCases 為真的律師：所有案件
+ * - 其餘律師：僅 responsibleLawyerUid 等於自己的案件
  *
  * 為避免複合索引需求，排序於用戶端完成。
  * @returns 取消訂閱函式
@@ -85,10 +90,9 @@ export function subscribeCases(
   onError: (error: Error) => void,
 ): () => void {
   const casesRef = collection(db, COLLECTIONS.cases);
-  const casesQuery =
-    user.role === ROLES.admin
-      ? query(casesRef)
-      : query(casesRef, where('responsibleLawyerUid', '==', user.uid));
+  const casesQuery = canViewAllCases(user)
+    ? query(casesRef)
+    : query(casesRef, where('responsibleLawyerUid', '==', user.uid));
 
   return onSnapshot(
     casesQuery,

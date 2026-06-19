@@ -2,6 +2,42 @@
 
 本檔透過 git 同步，供多台電腦查閱歷史紀錄。
 
+## 2026-06-19 — 新增「所有人」角色、逐人案件可見性、列表進度欄
+
+### 問題描述
+1. 角色需擴為三級：所有人 / 管理者 / 律師；「所有人」擁有管理者全部權限，
+   且不可被任何人修改權限或刪除。
+2. 使用者管理頁需可逐人設定「是否可看其他律師案件」，預設可看，由管理者/所有人調整。
+3. 首頁案件列表需顯示目前處理進度。
+4. 詞彙管理不應出現「其他」（或至少不可刪除），以免刪掉後無法再自訂。
+
+### 設計決策
+- **owner（所有人）角色**：`isAdmin` 改為「管理者或所有人」，owner 自動承襲管理者
+  所有權限。owner 僅能於 Firebase 主控台手動指派；使用者管理頁該列完全鎖定，
+  角色下拉只提供律師/管理者。安全規則禁止任何人修改/刪除 owner，亦禁止將他人提權為 owner。
+- **viewAllCases 旗標**（預設 true）：律師可否看其他律師案件。管理者/所有人不受限。
+  案件查詢與安全規則的讀取條件皆依此旗標；編輯/刪除仍限案件負責人與管理者。
+- **「其他」改為下拉內建入口**（SelectWithCustom 提供），不存入詞彙清單，
+  種子移除、顯示與新增皆過濾，避免被刪除後無法自訂。
+
+### 修改的檔案與內容
+- `config/constants.ts`：ROLES 新增 owner；新增 ADMIN_ROLES。
+- `types/user.ts`：UserRole 加 owner；AppUser 加 viewAllCases。
+- `services/authService.ts`：建立使用者時寫入 viewAllCases=true；profile 對應預設。
+- `services/userService.ts`：listUsers 對應 viewAllCases；新增 updateUserViewAllCases。
+- `context/authContext.ts`、`AuthProvider.tsx`：isAdmin 含 owner、新增 isOwner。
+- `pages/UsersPage.tsx`：owner 列鎖定（角色徽章、姓名純文字、狀態鎖定）、
+  新增「可看全部案件」欄（僅律師可調）。
+- `services/caseService.ts`：subscribeCases 依 viewAllCases 決定查詢全部或自己。
+- `firebase/firestore.rules`：isAdmin 含 owner；users 更新/刪除保護 owner、
+  禁止提權為 owner；cases 讀取新增 viewAllCases 條件。
+- `config/caseOptions.ts`：移除種子中的「其他」，新增 CUSTOM_OPTION_LABEL。
+- `services/vocabularyService.ts`：讀取與新增皆過濾「其他」。
+- `pages/CaseListPage.tsx`：新增「目前進度」欄（顯示最新一筆進度）。
+
+### 後續動作（提醒使用者）
+- 如需「所有人」帳號，請於 Firebase 主控台將該帳號 users 文件的 role 設為 `owner`。
+
 ## 2026-06-19 — 日期選擇器、可自訂詞彙、進度管理整併結案
 
 ### 問題描述

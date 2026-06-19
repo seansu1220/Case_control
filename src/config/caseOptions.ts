@@ -5,6 +5,13 @@
  * 可由管理者於「詞彙管理」頁增刪改；下列陣列僅作為首次初始化的種子值。
  */
 
+/**
+ * 「其他」為下拉選單一律提供的「手動輸入」入口（由 SelectWithCustom 內建），
+ * 不存於詞彙清單，也不可被刪除——避免誤刪後無法再自訂。
+ * 下列種子與顯示皆會排除此值。
+ */
+export const CUSTOM_OPTION_LABEL = '其他';
+
 /** 案件類型種子（含法扶，以類型區分；涵蓋現有 Excel 出現的所有類型）。 */
 export const CASE_TYPE_OPTIONS = [
   '刑',
@@ -16,7 +23,6 @@ export const CASE_TYPE_OPTIONS = [
   '勞',
   '行政',
   '非訟',
-  '其他',
 ] as const;
 
 /** 委任範圍常見值（可自由輸入，這裡提供快速選擇）。 */
@@ -30,7 +36,6 @@ export const MANDATE_SCOPE_OPTIONS = [
   '民事三審程序',
   '警詢乙次',
   '調解程序',
-  '其他',
 ] as const;
 
 /** 報稅狀態選項（結案後仍可修改的欄位）。 */
