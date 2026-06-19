@@ -6,15 +6,15 @@
 - 異常處理：缺檔、缺金鑰、缺參數皆給出明確中文錯誤，不靜默失敗。
 - 首次執行自動檢查並安裝 requirements.txt 的依賴。
 
-使用方式：
-    python tools/import_cases.py \
-        --service-account serviceAccountKey.json \
-        --owner-uid <蘇律師帳號的 Firebase Auth UID> \
-        --owner-name 蘇律師 \
-        [--excel data/蘇律師案件總表.xlsx] [--dry-run]
+使用方式（owner 以 email 或 uid 擇一指定）：
+    python tools/import_cases.py --owner-email 你的登入email --owner-name 蘇翊瑄 --dry-run
+    python tools/import_cases.py --owner-email 你的登入email --owner-name 蘇翊瑄
 
-取得 owner-uid：請蘇律師先在系統「註冊」一個帳號，
-到 Firebase 主控台 → Authentication → 使用者，複製該帳號的 UID。
+    # 或直接指定 UID：
+    python tools/import_cases.py --owner-uid <Firebase Auth UID> --owner-name 蘇翊瑄
+
+服務金鑰：Firebase 主控台 → 專案設定 → 服務帳戶 → 產生新的私密金鑰，
+下載後命名為 serviceAccountKey.json 放在專案根目錄（已列入 .gitignore）。
 """
 
 from __future__ import annotations
@@ -138,15 +138,37 @@ def load_records(excel_path: Path) -> list[dict]:
     return all_records
 
 
-def write_to_firestore(docs: list[dict], service_account: Path) -> None:
-    """以批次寫入 Firestore（每批 400 筆，避免單批上限）。"""
+def init_admin(service_account: Path) -> None:
+    """初始化 firebase-admin（重複呼叫安全）。"""
     import firebase_admin
-    from firebase_admin import credentials, firestore
+    from firebase_admin import credentials
 
     if not service_account.exists():
-        raise FileNotFoundError(f"找不到服務金鑰：{service_account}")
+        raise FileNotFoundError(
+            f"找不到服務金鑰：{service_account}\n"
+            "請至 Firebase 主控台 → 專案設定 → 服務帳戶 → 產生新的私密金鑰，"
+            "下載後命名為 serviceAccountKey.json 放在專案根目錄。"
+        )
+    if not firebase_admin._apps:
+        firebase_admin.initialize_app(credentials.Certificate(str(service_account)))
 
-    firebase_admin.initialize_app(credentials.Certificate(str(service_account)))
+
+def resolve_owner_uid(email: str) -> str:
+    """以 email 透過 Admin SDK 查出帳號 UID（需先 init_admin）。"""
+    from firebase_admin import auth
+
+    try:
+        return auth.get_user_by_email(email).uid
+    except Exception as error:  # noqa: BLE001
+        raise RuntimeError(
+            f"查不到登入 email「{email}」對應的帳號，請確認該帳號已在系統註冊過。原因：{error}"
+        ) from error
+
+
+def write_to_firestore(docs: list[dict]) -> None:
+    """以批次寫入 Firestore（每批 400 筆，避免單批上限）。需先 init_admin。"""
+    from firebase_admin import firestore
+
     client = firestore.client()
     collection = client.collection("cases")
 
@@ -163,10 +185,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="匯入案件總表至 Firestore")
     parser.add_argument("--excel", default="data/蘇律師案件總表.xlsx", help="Excel 檔路徑")
     parser.add_argument("--service-account", default="serviceAccountKey.json", help="Firebase 服務金鑰 JSON")
-    parser.add_argument("--owner-uid", required=True, help="負責律師帳號的 Firebase Auth UID")
-    parser.add_argument("--owner-name", default="蘇律師", help="負責律師顯示姓名")
+    parser.add_argument("--owner-uid", help="負責律師帳號的 Firebase Auth UID（與 --owner-email 擇一）")
+    parser.add_argument("--owner-email", help="負責律師的登入 email，自動解析出 UID（與 --owner-uid 擇一）")
+    parser.add_argument("--owner-name", default="蘇翊瑄", help="負責律師顯示姓名")
     parser.add_argument("--dry-run", action="store_true", help="僅解析與預覽，不寫入 Firestore")
     args = parser.parse_args()
+
+    if not args.owner_uid and not args.owner_email:
+        raise ValueError("請提供 --owner-uid 或 --owner-email 其中之一，指定案件負責律師。")
 
     base_dir = Path(__file__).resolve().parent.parent
     excel_path = (base_dir / args.excel) if not Path(args.excel).is_absolute() else Path(args.excel)
@@ -176,8 +202,16 @@ def main() -> None:
     records = load_records(excel_path)
     print(f"共解析 {len(records)} 筆案件。")
 
+    # 需要寫入或需以 email 解析 UID 時，初始化 Admin SDK。
+    owner_uid = args.owner_uid
+    if args.owner_email or not args.dry_run:
+        init_admin(sa_path)
+    if args.owner_email:
+        owner_uid = resolve_owner_uid(args.owner_email)
+        print(f"已解析 email {args.owner_email} → UID {owner_uid}")
+
     now_iso = datetime.now(timezone.utc).isoformat()
-    docs = [build_case_doc(r, args.owner_uid, args.owner_name, now_iso) for r in records]
+    docs = [build_case_doc(r, owner_uid or "<dry-run>", args.owner_name, now_iso) for r in records]
 
     if args.dry_run:
         print("\n[dry-run] 不寫入。前 3 筆預覽：")
@@ -186,8 +220,8 @@ def main() -> None:
             print("  ", preview)
         return
 
-    print(f"\n寫入 Firestore（負責律師：{args.owner_name} / {args.owner_uid}）…")
-    write_to_firestore(docs, sa_path)
+    print(f"\n寫入 Firestore（負責律師：{args.owner_name} / {owner_uid}）…")
+    write_to_firestore(docs)
     print("匯入完成。")
 
 
