@@ -5,6 +5,7 @@ import { login } from '../services/authService';
 import { useAuth } from '../hooks/useAuth';
 import { APP_NAME } from '../config/constants';
 import { Button, Card, ErrorBanner } from '../components/ui';
+import { GoogleSignInButton } from '../components/GoogleSignInButton';
 
 export function LoginPage() {
   const { user, loading } = useAuth();
@@ -68,6 +69,14 @@ export function LoginPage() {
             {submitting ? '登入中…' : '登入'}
           </Button>
         </form>
+
+        <div className="my-4 flex items-center gap-3 text-xs text-slate-400">
+          <span className="h-px flex-1 bg-slate-200" />
+          或
+          <span className="h-px flex-1 bg-slate-200" />
+        </div>
+        <GoogleSignInButton onError={setError} />
+
         <p className="mt-4 text-center text-sm text-slate-500">
           還沒有帳號？{' '}
           <Link to="/register" className="font-medium text-slate-800 underline">

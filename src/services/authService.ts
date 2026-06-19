@@ -4,7 +4,9 @@
  */
 import {
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   updateProfile,
 } from 'firebase/auth';
@@ -24,8 +26,48 @@ function toFriendlyMessage(error: unknown): string {
     'auth/wrong-password': '密碼錯誤。',
     'auth/invalid-credential': 'email 或密碼錯誤。',
     'auth/too-many-requests': '嘗試次數過多，請稍後再試。',
+    'auth/popup-closed-by-user': '已取消 Google 登入。',
+    'auth/cancelled-popup-request': '已取消 Google 登入。',
+    'auth/popup-blocked': '瀏覽器封鎖了登入彈出視窗，請允許彈出視窗後再試。',
+    'auth/account-exists-with-different-credential':
+      '此 email 已用其他方式註冊。請先用原本的方式登入，或在 Firebase 設定開啟「以相同 email 連結帳號」。',
   };
   return map[code] ?? `操作失敗（${code || (error as Error)?.message || '未知錯誤'}）`;
+}
+
+/**
+ * 確保 users 文件存在；若不存在（例如首次以 Google 登入）則建立，
+ * 預設為一般律師角色。已存在則不覆寫（保留既有角色設定）。
+ */
+async function ensureUserDoc(uid: string, email: string, displayName: string): Promise<void> {
+  const ref = doc(db, COLLECTIONS.users, uid);
+  const snapshot = await getDoc(ref);
+  if (snapshot.exists()) return;
+  await setDoc(ref, {
+    uid,
+    email,
+    displayName,
+    lawyerName: displayName,
+    role: DEFAULT_ROLE,
+    active: true,
+    createdAt: serverTimestamp(),
+  });
+}
+
+/**
+ * 以 Google 帳號登入。
+ * 若該 email 已有 email/密碼帳號，且 Firebase 已設定「以相同 email 連結帳號」，
+ * 會自動連結為同一帳號（同一 uid、同一份案件資料）。
+ */
+export async function loginWithGoogle(): Promise<void> {
+  try {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    const { uid, email, displayName } = result.user;
+    await ensureUserDoc(uid, email ?? '', displayName ?? email ?? '使用者');
+  } catch (error) {
+    throw new Error(toFriendlyMessage(error));
+  }
 }
 
 /**

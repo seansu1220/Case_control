@@ -2,6 +2,25 @@
 
 本檔透過 git 同步，供多台電腦查閱歷史紀錄。
 
+## 2026-06-19 — 新增 Google 登入並支援與帳密連結
+
+### 問題描述
+需新增 Google 登入，並讓同一 email 的 Google 與 email/密碼帳號連結為同一帳號。
+
+### 根本原因 / 設計決策
+- 採 `signInWithPopup` + `GoogleAuthProvider`；帳號連結交由 Firebase 主控台設定
+  「以相同 email 連結帳號」，同一 email 自動視為同一 uid，免寫複雜連結流程。
+- 首次 Google 登入自動建立 users 文件（預設律師角色）；已存在則不覆寫，保留既有角色。
+
+### 修改的檔案與內容
+- `src/services/authService.ts`：新增 `loginWithGoogle`、`ensureUserDoc`，
+  擴充 Google 相關錯誤訊息對應。
+- 新增 `src/components/GoogleSignInButton.tsx`（含 Google 標誌）。
+- `src/pages/LoginPage.tsx`、`RegisterPage.tsx`：加入分隔線與 Google 登入按鈕。
+
+### 待設定（Firebase 主控台）
+Authentication → 設定 → 使用者帳戶連結 → 選「以相同電子郵件地址連結帳戶」。
+
 ## 2026-06-19 — 根目錄分門別類整理
 
 ### 問題描述
