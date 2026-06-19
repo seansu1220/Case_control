@@ -1,17 +1,25 @@
 @echo off
-chcp 65001 >nul
 cd /d "%~dp0"
-title 案件管理系統
+title Case Control
 
-rem 第一次啟動時，若尚未安裝套件則自動安裝（呼應 CLAUDE.md：首次執行自動檢查下載）
-if not exist "node_modules" (
+rem Check npm availability
+where npm >nul 2>nul
+if errorlevel 1 (
+  echo [ERROR] Node.js / npm not found.
+  echo Please install Node.js from https://nodejs.org then try again.
   echo.
-  echo 第一次啟動，正在安裝必要套件，請稍候約 3-5 分鐘...
+  pause
+  exit /b 1
+)
+
+rem First run: install packages if needed
+if not exist "node_modules\" (
+  echo First run detected. Installing packages, please wait a few minutes...
   echo.
   call npm install
   if errorlevel 1 (
     echo.
-    echo [錯誤] 套件安裝失敗，請確認已安裝 Node.js（https://nodejs.org）。
+    echo [ERROR] npm install failed. See messages above.
     pause
     exit /b 1
   )
@@ -19,14 +27,15 @@ if not exist "node_modules" (
 
 echo.
 echo ============================================
-echo    正在啟動案件管理系統...
-echo    稍候瀏覽器會自動開啟，請勿關閉這個視窗
-echo    （關閉視窗系統就會停止；用完直接關閉即可）
+echo   Starting Case Control...
+echo   A browser window will open shortly.
+echo   KEEP THIS WINDOW OPEN while using the system.
+echo   Close this window to stop the system.
 echo ============================================
 echo.
 
 call npm start
 
 echo.
-echo 系統已停止。按任意鍵關閉視窗。
+echo System stopped. Press any key to close this window.
 pause >nul
