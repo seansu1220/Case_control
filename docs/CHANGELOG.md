@@ -2,6 +2,47 @@
 
 本檔透過 git 同步，供多台電腦查閱歷史紀錄。
 
+## 2026-06-19 — 日期選擇器、可自訂詞彙、進度管理整併結案
+
+### 問題描述
+使用者提出五項調整：
+1. 收件日改用日期選擇器（同進度管理）。
+2. 類型 / 委任範圍選「其他」可手動輸入，並可選擇加入共用選項清單。
+3. 首頁新增「詞彙管理」可增刪改查這些選項。
+4. 委任狀遞出時間改日期選擇器，且可加「時間」（日期必填、時間選填）。
+5. 處理 / 結果 / 狀態併入進度管理，結案也併入（可選時間、寫備註、勾選結案）。
+
+### 設計決策
+- **詞彙改存 Firestore**（新增 `vocabularies` 集合，文件 `caseType` / `mandateScope`，
+  欄位 `values: string[]`），才能由管理者動態增減並跨裝置即時同步。
+  種子值沿用原 `caseOptions.ts`；安全規則：任何登入者可讀、可「新增」選項
+  （數量增加），改名 / 刪除限管理者。
+- **詞彙管理權限**：管理者可完整 CRUD；律師僅能透過「其他 → 加入常用選項」附加。
+- **舊資料一次性遷移**採「客戶端管理者執行」（免服務金鑰）：以 schemaVersion=2
+  控制冪等，可重複執行。轉換民國日期→西元、把處理/結果/狀態各轉一筆進度紀錄、
+  並以既有資料初始化詞彙清單。
+- **結案併入進度**：結案時新增一筆標記 `closing` 的進度紀錄（內容為結案備註），
+  並設定 `closed` 與 `closedAt`（取所選日期時間）。重新開啟仍限管理者。
+
+### 修改的檔案與內容
+- 型別 `types/case.ts`：`ProgressEntry` 加 `time?` / `closing?`；移除案件層
+  `handling` / `result` / `status`；`receiptDate` / `mandateDate` 改為日期(時間)格式。
+- 設定 `config/caseFields.ts`：新增 `datetime` 輸入型別與 `vocabKey` / `allowCustom`
+  欄位屬性；收件日→`date`、委任狀→`datetime`、類型/委任範圍→詞彙型 select；移除舊三欄。
+- 新增 `services/vocabularyService.ts`、`hooks/useVocabularies.ts`：詞彙讀寫與訂閱。
+- 新增 `components/SelectWithCustom.tsx`：可選「其他」自訂並加入清單的下拉。
+- `components/CaseForm.tsx`：動態選項、日期/日期時間渲染。
+- `components/ProgressSection.tsx`：進度加時間欄；整併結案流程與管理者重新開啟。
+- `services/caseService.ts`：`addProgressEntry` 支援時間、新增 `closeCaseWithEntry`、
+  移除舊欄 mapping。
+- 新增 `services/migrationService.ts` 與 `pages/VocabularyAdminPage.tsx`（含遷移按鈕）；
+  `App.tsx` 加 `/vocabularies` 路由、`Layout.tsx` 加導覽（皆限管理者）。
+- `firebase/firestore.rules`：新增 `vocabularies` 集合規則。
+- 頁面 `CaseDetailPage.tsx` / `NewCasePage.tsx`：串接詞彙與新結案流程。
+
+### 後續動作（提醒使用者）
+- 部署後請管理者登入 → 「詞彙管理」→「執行遷移」一次，轉換既有 95 筆案件。
+
 ## 2026-06-19 — 首次部署上線（Firebase Hosting）
 
 ### 問題描述

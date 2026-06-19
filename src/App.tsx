@@ -9,6 +9,7 @@ import { NewCasePage } from './pages/NewCasePage';
 import { CaseDetailPage } from './pages/CaseDetailPage';
 import { UsersPage } from './pages/UsersPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { VocabularyAdminPage } from './pages/VocabularyAdminPage';
 
 export default function App() {
   return (
@@ -32,6 +33,14 @@ export default function App() {
           element={
             <ProtectedRoute requireAdmin>
               <UsersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="vocabularies"
+          element={
+            <ProtectedRoute requireAdmin>
+              <VocabularyAdminPage />
             </ProtectedRoute>
           }
         />

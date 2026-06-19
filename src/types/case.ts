@@ -6,14 +6,18 @@
  * 另加上「負責律師」「結案」「進度紀錄」等系統欄位。
  */
 
-/** 單筆進度紀錄：使用者選一個日期 + 填寫當下進度。 */
+/** 單筆進度紀錄：使用者選一個日期（可加時間）+ 填寫當下進度。 */
 export interface ProgressEntry {
   /** 前端產生的唯一 ID（用於 React key 與刪除）。 */
   id: string;
-  /** 進度日期（ISO 字串 yyyy-MM-dd）。 */
+  /** 進度日期（yyyy-MM-dd）。 */
   date: string;
+  /** 進度時間（HH:mm），選填；空字串代表只記日期。 */
+  time?: string;
   /** 進度內容描述。 */
   content: string;
+  /** 是否為「結案」紀錄（結案時自動產生的那筆，內容即結案備註）。 */
+  closing?: boolean;
   /** 紀錄建立時間（ISO 字串）。 */
   createdAt: string;
   /** 紀錄建立者的 uid。 */
@@ -31,9 +35,9 @@ export interface CaseRecord {
   id: string;
 
   // ── 來自 Excel 的案件欄位 ──
-  /** 收件日。 */
+  /** 收件日（yyyy-MM-dd，日期選擇器）。 */
   receiptDate: string;
-  /** 類型（刑、民、刑(法扶) 等，見 config/caseOptions）。 */
+  /** 類型（刑、民、刑(法扶) 等；選項存於 vocabularies/caseType）。 */
   caseType: string;
   /** 當事人。 */
   client: string;
@@ -47,22 +51,17 @@ export interface CaseRecord {
   caseNumber: string;
   /** 住址。 */
   address: string;
-  /** 處理（承辦摘要，歷史自由文字）。 */
-  handling: string;
   /** 日程/理由（日期 / 時間 / 庭，歷史自由文字）。 */
   schedule: string;
   /** 地院 / 地檢。 */
   court: string;
-  /** 委任狀遞出時間。 */
+  /** 委任狀遞出時間（yyyy-MM-dd 或 yyyy-MM-dd HH:mm；日期必填、時間選填）。 */
   mandateDate: string;
-  /** 委任範圍。 */
+  /** 委任範圍（選項存於 vocabularies/mandateScope）。 */
   mandateScope: string;
-  /** 結果。 */
-  result: string;
-  /** 狀態。 */
-  status: string;
   /** 報稅（結案後仍可修改的唯一欄位）。 */
   taxStatus: string;
+  // 註：原「處理 / 結果 / 狀態」欄位已併入進度管理（progressEntries），不再為獨立欄位。
 
   // ── 系統欄位 ──
   /** 負責律師的 uid（權限判斷依據）。 */

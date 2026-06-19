@@ -36,6 +36,11 @@ export function Layout() {
                 使用者管理
               </NavLink>
             )}
+            {isAdmin && (
+              <NavLink to="/vocabularies" className={navItemClass}>
+                詞彙管理
+              </NavLink>
+            )}
           </nav>
           <div className="flex items-center gap-2 text-sm text-slate-600">
             <NavLink to="/profile" className={navItemClass} title="個人設定（改名）">

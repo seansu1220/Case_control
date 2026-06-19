@@ -50,13 +50,10 @@ function mapCaseData(id: string, data: DocumentData): CaseRecord {
     phone: data.phone ?? '',
     caseNumber: data.caseNumber ?? '',
     address: data.address ?? '',
-    handling: data.handling ?? '',
     schedule: data.schedule ?? '',
     court: data.court ?? '',
     mandateDate: data.mandateDate ?? '',
     mandateScope: data.mandateScope ?? '',
-    result: data.result ?? '',
-    status: data.status ?? '',
     taxStatus: data.taxStatus ?? '',
     responsibleLawyerUid: data.responsibleLawyerUid ?? '',
     responsibleLawyerName: data.responsibleLawyerName ?? '',
@@ -174,12 +171,11 @@ export async function deleteCase(caseId: string): Promise<void> {
   await deleteDoc(doc(db, COLLECTIONS.cases, caseId));
 }
 
-/** 新增一筆進度紀錄（日期 + 內容）。 */
-export async function addProgressEntry(
-  existing: CaseRecord,
-  input: { date: string; content: string },
+/** 依輸入組出一筆進度紀錄（time/closing 為選填）。 */
+function buildProgressEntry(
+  input: { date: string; time?: string; content: string; closing?: boolean },
   currentUser: AppUser,
-): Promise<void> {
+): ProgressEntry {
   const entry: ProgressEntry = {
     id: crypto.randomUUID(),
     date: input.date,
@@ -187,7 +183,19 @@ export async function addProgressEntry(
     createdAt: new Date().toISOString(),
     createdByUid: currentUser.uid,
   };
-  const next = [...existing.progressEntries, entry];
+  // 僅在有值時寫入選填欄位，避免 Firestore 存入 undefined。
+  if (input.time) entry.time = input.time;
+  if (input.closing) entry.closing = true;
+  return entry;
+}
+
+/** 新增一筆進度紀錄（日期 + 內容，時間選填）。 */
+export async function addProgressEntry(
+  existing: CaseRecord,
+  input: { date: string; time?: string; content: string },
+  currentUser: AppUser,
+): Promise<void> {
+  const next = [...existing.progressEntries, buildProgressEntry(input, currentUser)];
   await updateDoc(doc(db, COLLECTIONS.cases, existing.id), {
     progressEntries: next,
     updatedAt: serverTimestamp(),
@@ -203,11 +211,25 @@ export async function deleteProgressEntry(existing: CaseRecord, entryId: string)
   });
 }
 
-/** 結案：結案後除「報稅」外不可再修改。 */
-export async function closeCase(caseId: string): Promise<void> {
-  await updateDoc(doc(db, COLLECTIONS.cases, caseId), {
+/**
+ * 結案：併入進度管理——同時新增一筆「結案」進度紀錄（日期/時間/備註），
+ * 並標記 closed 與結案時間。結案後除「報稅」外不可再修改。
+ */
+export async function closeCaseWithEntry(
+  existing: CaseRecord,
+  input: { date: string; time?: string; note: string },
+  currentUser: AppUser,
+): Promise<void> {
+  const entry = buildProgressEntry(
+    { date: input.date, time: input.time, content: input.note || '（結案）', closing: true },
+    currentUser,
+  );
+  // 結案時間取使用者所選日期（含時間，未填時間則以當日 00:00 計）。
+  const closedAtIso = new Date(`${input.date}T${input.time || '00:00'}`).toISOString();
+  await updateDoc(doc(db, COLLECTIONS.cases, existing.id), {
+    progressEntries: [...existing.progressEntries, entry],
     closed: true,
-    closedAt: serverTimestamp(),
+    closedAt: closedAtIso,
     updatedAt: serverTimestamp(),
   });
 }

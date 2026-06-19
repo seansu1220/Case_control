@@ -2,7 +2,9 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useVocabularies } from '../hooks/useVocabularies';
 import { createCase } from '../services/caseService';
+import { addVocabularyValue } from '../services/vocabularyService';
 import { listUsers } from '../services/userService';
 import { createEmptyCaseValues, type EditableCaseKey } from '../config/caseFields';
 import type { CaseDraft } from '../types/case';
@@ -12,6 +14,7 @@ import { Button, Card, ErrorBanner } from '../components/ui';
 
 export function NewCasePage() {
   const { user, isAdmin } = useAuth();
+  const { vocabularies } = useVocabularies();
   const navigate = useNavigate();
   const [values, setValues] = useState(createEmptyCaseValues());
   const [lawyers, setLawyers] = useState<AppUser[]>([]);
@@ -91,7 +94,12 @@ export function NewCasePage() {
             </div>
           )}
 
-          <CaseForm values={values} onChange={handleChange} />
+          <CaseForm
+            values={values}
+            onChange={handleChange}
+            vocabularies={vocabularies}
+            onAddVocabulary={addVocabularyValue}
+          />
           <ErrorBanner message={error} />
 
           <div className="flex justify-end gap-2">

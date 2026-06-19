@@ -69,5 +69,23 @@ service cloud.firestore {
             && resource.data.closed == true
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['taxStatus', 'updatedAt']));
     }
+
+    // ── 詞彙清單（類型 / 委任範圍等下拉選項）──
+    match /vocabularies/{listId} {
+      // 任何登入者可讀（表單需要選項）。
+      allow read: if isSignedIn();
+
+      // 建立清單文件：任何登入者皆可（首次新增選項時自動建立）。
+      allow create: if isSignedIn();
+
+      // 更新：管理者不受限（改名 / 刪除 / 排序）；
+      // 一般律師僅能「新增」選項（選項數量增加），用於「其他」加入常用清單。
+      allow update: if isAdmin()
+        || (isSignedIn()
+            && request.resource.data.values.size() > resource.data.values.size());
+
+      // 刪除整份清單僅限管理者。
+      allow delete: if isAdmin();
+    }
   }
 }

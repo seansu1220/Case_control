@@ -5,10 +5,13 @@
  * 不需動到表單元件與列表元件的程式碼。
  */
 import type { CaseRecord } from '../types/case';
-import { CASE_TYPE_OPTIONS, MANDATE_SCOPE_OPTIONS, TAX_STATUS_OPTIONS } from './caseOptions';
+import { TAX_STATUS_OPTIONS } from './caseOptions';
 
 /** 欄位輸入類型。 */
-export type FieldInputType = 'text' | 'textarea' | 'date' | 'select' | 'tel';
+export type FieldInputType = 'text' | 'textarea' | 'date' | 'datetime' | 'select' | 'tel';
+
+/** 詞彙清單鍵（對應 Firestore vocabularies/{key}）。 */
+export type VocabularyKey = 'caseType' | 'mandateScope';
 
 /** 可由表單編輯的案件欄位鍵（排除系統欄位與進度紀錄）。 */
 export type EditableCaseKey = Exclude<
@@ -29,8 +32,12 @@ export interface FieldDef {
   key: EditableCaseKey;
   label: string;
   inputType: FieldInputType;
-  /** select 類型的選項。 */
+  /** select 類型的固定選項（詞彙型欄位改用 vocabKey 動態載入）。 */
   options?: readonly string[];
+  /** 詞彙型 select 對應的清單鍵；有此值時選項來自 Firestore，可動態增減。 */
+  vocabKey?: VocabularyKey;
+  /** select 是否允許「其他」手動輸入自訂值。 */
+  allowCustom?: boolean;
   /** 是否必填。 */
   required?: boolean;
   /** 是否在案件列表（表格）顯示。 */
@@ -42,24 +49,24 @@ export interface FieldDef {
   editableAfterClosed?: boolean;
 }
 
-/** 案件所有可編輯欄位定義，順序即表單呈現順序。 */
+/**
+ * 案件所有可編輯欄位定義，順序即表單呈現順序。
+ *
+ * 註：原「處理 / 結果 / 狀態」已併入進度管理，不在此列。
+ */
 export const CASE_FIELDS: FieldDef[] = [
-  // 收件日沿用民國格式自由文字（如 111.05.09），故為 text；日期選擇器用於「進度管理」。
-  { key: 'receiptDate', label: '收件日', inputType: 'text', showInList: true },
-  { key: 'caseType', label: '類型', inputType: 'select', options: CASE_TYPE_OPTIONS, required: true, showInList: true },
+  { key: 'receiptDate', label: '收件日', inputType: 'date', showInList: true },
+  { key: 'caseType', label: '類型', inputType: 'select', vocabKey: 'caseType', allowCustom: true, required: true, showInList: true },
   { key: 'client', label: '當事人', inputType: 'text', required: true, showInList: true },
   { key: 'opposingParty', label: '對造', inputType: 'textarea' },
   { key: 'caseReason', label: '案由', inputType: 'text', showInList: true },
   { key: 'phone', label: '電話', inputType: 'tel' },
   { key: 'caseNumber', label: '案號', inputType: 'textarea', showInList: true },
   { key: 'address', label: '住址', inputType: 'textarea' },
-  { key: 'handling', label: '處理', inputType: 'textarea' },
   { key: 'schedule', label: '日程/理由', inputType: 'textarea' },
   { key: 'court', label: '地院/地檢', inputType: 'text', showInList: true },
-  { key: 'mandateDate', label: '委任狀遞出時間', inputType: 'text' },
-  { key: 'mandateScope', label: '委任範圍', inputType: 'select', options: MANDATE_SCOPE_OPTIONS },
-  { key: 'result', label: '結果', inputType: 'text' },
-  { key: 'status', label: '狀態', inputType: 'text', showInList: true },
+  { key: 'mandateDate', label: '委任狀遞出時間', inputType: 'datetime' },
+  { key: 'mandateScope', label: '委任範圍', inputType: 'select', vocabKey: 'mandateScope', allowCustom: true },
   {
     key: 'taxStatus',
     label: '報稅',

@@ -7,6 +7,8 @@
 export const COLLECTIONS = {
   users: 'users',
   cases: 'cases',
+  /** 詞彙清單（類型、委任範圍等可由管理者增減的選項）。 */
+  vocabularies: 'vocabularies',
 } as const;
 
 /** 角色常數。 */

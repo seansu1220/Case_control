@@ -9,14 +9,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useVocabularies } from '../hooks/useVocabularies';
 import {
-  closeCase,
   deleteCase,
-  reopenCase,
   subscribeCase,
   updateCaseFields,
   updateTaxStatus,
 } from '../services/caseService';
+import { addVocabularyValue } from '../services/vocabularyService';
 import { extractEditableValues, type EditableCaseKey } from '../config/caseFields';
 import type { CaseDraft, CaseRecord } from '../types/case';
 import { CaseForm } from '../components/CaseForm';
@@ -26,6 +26,7 @@ import { Badge, Button, Card, CenteredSpinner, ErrorBanner } from '../components
 export function CaseDetailPage() {
   const { caseId } = useParams<{ caseId: string }>();
   const { user, isAdmin } = useAuth();
+  const { vocabularies } = useVocabularies();
   const navigate = useNavigate();
 
   const [record, setRecord] = useState<CaseRecord | null>(null);
@@ -112,28 +113,6 @@ export function CaseDetailPage() {
     }
   }
 
-  async function handleClose() {
-    if (!record) return;
-    if (!window.confirm('結案後除「報稅」外將無法再修改，確定結案？')) return;
-    setActionError(null);
-    try {
-      if (dirty) await handleSave();
-      await closeCase(record.id);
-    } catch (err) {
-      setActionError(`結案失敗：${(err as Error).message}`);
-    }
-  }
-
-  async function handleReopen() {
-    if (!record) return;
-    if (!window.confirm('確定重新開啟此案件？')) return;
-    try {
-      await reopenCase(record.id);
-    } catch (err) {
-      setActionError(`重新開啟失敗：${(err as Error).message}`);
-    }
-  }
-
   async function handleDelete() {
     if (!record) return;
     if (!window.confirm(`確定刪除案件「${record.client}」？此動作無法復原。`)) return;
@@ -176,6 +155,8 @@ export function CaseDetailPage() {
         <CaseForm
           values={values}
           onChange={handleFieldChange}
+          vocabularies={vocabularies}
+          onAddVocabulary={addVocabularyValue}
           readOnly={!isOwnerOrAdmin}
           isClosed={isClosed}
         />
@@ -188,30 +169,22 @@ export function CaseDetailPage() {
         )}
       </Card>
 
-      {/* 進度管理 */}
+      {/* 進度管理（含結案 / 重新開啟） */}
       <Card className="space-y-4">
         <h2 className="text-base font-semibold text-slate-700">進度管理</h2>
-        <ProgressSection caseRecord={record} currentUser={user} locked={isClosed || !isOwnerOrAdmin} />
+        <ProgressSection
+          caseRecord={record}
+          currentUser={user}
+          isOwnerOrAdmin={isOwnerOrAdmin}
+          isAdmin={isAdmin}
+        />
       </Card>
 
-      {/* 結案 / 刪除 操作 */}
+      {/* 刪除案件 */}
       {isOwnerOrAdmin && (
         <Card className="space-y-4">
           <h2 className="text-base font-semibold text-slate-700">案件操作</h2>
-          <div className="flex flex-wrap items-center gap-4">
-            {!isClosed ? (
-              <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                <input type="checkbox" className="h-4 w-4" checked={false} onChange={handleClose} />
-                結案（勾選後確認）
-              </label>
-            ) : (
-              isAdmin && (
-                <Button variant="secondary" onClick={handleReopen}>
-                  重新開啟案件
-                </Button>
-              )
-            )}
-            <div className="flex-1" />
+          <div className="flex justify-end">
             <Button variant="danger" onClick={handleDelete}>
               刪除案件
             </Button>
