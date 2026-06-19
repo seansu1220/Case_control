@@ -3,6 +3,8 @@
 律師事務所案件管理網頁。支援帳號登入/註冊與權限分級、案件 CRUD、進度管理、結案鎖定，
 資料存於 Firebase Firestore，桌機/平板/手機皆可使用、即時跨裝置同步。
 
+> 📋 完整系統規格請見 [docs/SPEC.md](docs/SPEC.md)；變更歷程見 [docs/CHANGELOG.md](docs/CHANGELOG.md)。
+
 ## 功能總覽
 
 | 功能 | 說明 |
