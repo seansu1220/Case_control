@@ -13,7 +13,10 @@ export type FieldInputType = 'text' | 'textarea' | 'date' | 'datetime' | 'select
 /** 詞彙清單鍵（對應 Firestore vocabularies/{key}）。 */
 export type VocabularyKey = 'caseType' | 'mandateScope';
 
-/** 可由表單編輯的案件欄位鍵（排除系統欄位與進度紀錄）。 */
+/**
+ * 可由「字串型」表單欄位編輯的案件鍵（排除系統欄位、進度紀錄與布林旗標）。
+ * legalAid 為布林值，於頁面以獨立 checkbox 處理，不走 CASE_FIELDS。
+ */
 export type EditableCaseKey = Exclude<
   keyof CaseRecord,
   | 'id'
@@ -25,6 +28,7 @@ export type EditableCaseKey = Exclude<
   | 'updatedAt'
   | 'responsibleLawyerUid'
   | 'responsibleLawyerName'
+  | 'legalAid'
 >;
 
 /** 單一欄位的定義。 */
@@ -42,6 +46,8 @@ export interface FieldDef {
   required?: boolean;
   /** 是否在案件列表（表格）顯示。 */
   showInList?: boolean;
+  /** 列表欄位的寬度上限樣式（控制各格大小，重要欄寬、次要欄窄）。 */
+  listWidthClass?: string;
   /**
    * 結案後是否仍可編輯。
    * 依需求：結案後僅「報稅」可改，其餘鎖定。
@@ -55,16 +61,15 @@ export interface FieldDef {
  * 註：原「處理 / 結果 / 狀態」已併入進度管理，不在此列。
  */
 export const CASE_FIELDS: FieldDef[] = [
-  { key: 'receiptDate', label: '收件日', inputType: 'date', showInList: true },
-  { key: 'caseType', label: '類型', inputType: 'select', vocabKey: 'caseType', allowCustom: true, required: true, showInList: true },
-  { key: 'client', label: '當事人', inputType: 'text', required: true, showInList: true },
-  { key: 'opposingParty', label: '對造', inputType: 'textarea' },
-  { key: 'caseReason', label: '案由', inputType: 'text', showInList: true },
+  { key: 'receiptDate', label: '收件日', inputType: 'date', showInList: true, listWidthClass: 'max-w-[6rem]' },
+  { key: 'caseType', label: '類型', inputType: 'select', vocabKey: 'caseType', allowCustom: true, required: true, showInList: true, listWidthClass: 'max-w-[5rem]' },
+  { key: 'client', label: '當事人', inputType: 'text', required: true, showInList: true, listWidthClass: 'max-w-[8rem]' },
+  { key: 'opposingParty', label: '對造', inputType: 'text' },
+  { key: 'caseReason', label: '案由', inputType: 'text', showInList: true, listWidthClass: 'max-w-[11rem]' },
   { key: 'phone', label: '電話', inputType: 'tel' },
-  { key: 'caseNumber', label: '案號', inputType: 'textarea', showInList: true },
+  { key: 'caseNumber', label: '案號', inputType: 'text', showInList: true, listWidthClass: 'max-w-[6rem]' },
   { key: 'address', label: '住址', inputType: 'textarea' },
-  { key: 'schedule', label: '日程/理由', inputType: 'textarea' },
-  { key: 'court', label: '地院/地檢', inputType: 'text', showInList: true },
+  { key: 'court', label: '地院/地檢', inputType: 'text', showInList: true, listWidthClass: 'max-w-[7rem]' },
   { key: 'mandateDate', label: '委任狀遞出時間', inputType: 'datetime' },
   { key: 'mandateScope', label: '委任範圍', inputType: 'select', vocabKey: 'mandateScope', allowCustom: true },
   {

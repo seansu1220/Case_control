@@ -37,8 +37,10 @@ export interface CaseRecord {
   // ── 來自 Excel 的案件欄位 ──
   /** 收件日（yyyy-MM-dd，日期選擇器）。 */
   receiptDate: string;
-  /** 類型（刑、民、刑(法扶) 等；選項存於 vocabularies/caseType）。 */
+  /** 類型（刑、民 等；選項存於 vocabularies/caseType）。 */
   caseType: string;
+  /** 是否為法扶案件（與類型獨立的旗標，供標示與篩選）。 */
+  legalAid: boolean;
   /** 當事人。 */
   client: string;
   /** 對造。 */
@@ -51,8 +53,6 @@ export interface CaseRecord {
   caseNumber: string;
   /** 住址。 */
   address: string;
-  /** 日程/理由（日期 / 時間 / 庭，歷史自由文字）。 */
-  schedule: string;
   /** 地院 / 地檢。 */
   court: string;
   /** 委任狀遞出時間（yyyy-MM-dd 或 yyyy-MM-dd HH:mm；日期必填、時間選填）。 */

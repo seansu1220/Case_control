@@ -35,6 +35,7 @@ export function CaseDetailPage() {
   const [actionError, setActionError] = useState<string | null>(null);
 
   const [values, setValues] = useState(() => extractEditableValues({} as CaseRecord));
+  const [legalAid, setLegalAid] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -60,6 +61,7 @@ export function CaseDetailPage() {
   useEffect(() => {
     if (record && !dirty) {
       setValues(extractEditableValues(record));
+      setLegalAid(record.legalAid);
     }
   }, [record, dirty]);
 
@@ -102,7 +104,7 @@ export function CaseDetailPage() {
         // 結案後僅報稅可改。
         await updateTaxStatus(record.id, values.taxStatus);
       } else {
-        const fields: Partial<CaseDraft> = { ...values };
+        const fields: Partial<CaseDraft> = { ...values, legalAid };
         await updateCaseFields(record.id, fields);
       }
       setDirty(false);
@@ -131,6 +133,7 @@ export function CaseDetailPage() {
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-xl font-bold text-slate-800">{record.client || '（未命名當事人）'}</h1>
           {record.caseType && <Badge>{record.caseType}</Badge>}
+          {record.legalAid && <Badge tone="amber">法扶</Badge>}
           {isClosed ? <Badge tone="green">已結案</Badge> : <Badge tone="amber">進行中</Badge>}
           {isAdmin && (
             <span className="text-sm text-slate-400">負責律師：{record.responsibleLawyerName || '—'}</span>
@@ -152,6 +155,19 @@ export function CaseDetailPage() {
       {/* 案件欄位 */}
       <Card className="space-y-4">
         <h2 className="text-base font-semibold text-slate-700">案件資料</h2>
+        <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+          <input
+            type="checkbox"
+            className="h-4 w-4"
+            checked={legalAid}
+            disabled={!isOwnerOrAdmin || isClosed}
+            onChange={(e) => {
+              setDirty(true);
+              setLegalAid(e.target.checked);
+            }}
+          />
+          是否為法扶案件
+        </label>
         <CaseForm
           values={values}
           onChange={handleFieldChange}

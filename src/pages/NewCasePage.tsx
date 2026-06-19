@@ -17,6 +17,7 @@ export function NewCasePage() {
   const { vocabularies } = useVocabularies();
   const navigate = useNavigate();
   const [values, setValues] = useState(createEmptyCaseValues());
+  const [legalAid, setLegalAid] = useState(false);
   const [lawyers, setLawyers] = useState<AppUser[]>([]);
   const [responsibleUid, setResponsibleUid] = useState(user?.uid ?? '');
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +52,7 @@ export function NewCasePage() {
           : user;
       const draft: CaseDraft = {
         ...values,
+        legalAid,
         responsibleLawyerUid: responsible?.uid ?? user.uid,
         responsibleLawyerName: responsible?.lawyerName ?? user.lawyerName,
       };
@@ -93,6 +95,16 @@ export function NewCasePage() {
               </select>
             </div>
           )}
+
+          <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+            <input
+              type="checkbox"
+              className="h-4 w-4"
+              checked={legalAid}
+              onChange={(e) => setLegalAid(e.target.checked)}
+            />
+            是否為法扶案件
+          </label>
 
           <CaseForm
             values={values}
