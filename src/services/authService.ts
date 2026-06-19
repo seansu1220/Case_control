@@ -63,6 +63,8 @@ async function ensureUserDoc(uid: string, email: string, displayName: string): P
 export async function loginWithGoogle(): Promise<void> {
   try {
     const provider = new GoogleAuthProvider();
+    // 每次都跳出「選擇帳號」畫面，避免自動沿用上次登入的同一帳號、無法切換。
+    provider.setCustomParameters({ prompt: 'select_account' });
     const result = await signInWithPopup(auth, provider);
     const { uid, email, displayName } = result.user;
     await ensureUserDoc(uid, email ?? '', displayName ?? email ?? '使用者');

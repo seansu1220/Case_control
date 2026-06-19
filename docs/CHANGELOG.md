@@ -2,6 +2,16 @@
 
 本檔透過 git 同步，供多台電腦查閱歷史紀錄。
 
+## 2026-06-19 — Google 登入強制選擇帳號
+
+### 問題描述
+以 Google 登入過一次後，再按 Google 登入會自動沿用同一帳號，
+不跳出選擇畫面，無法切換到其他 Google 帳號。
+
+### 修改的檔案與內容
+- `services/authService.ts`：`loginWithGoogle` 的 provider 設定
+  `setCustomParameters({ prompt: 'select_account' })`，每次登入皆顯示選擇帳號畫面。
+
 ## 2026-06-19 — 列表欄序/固定表頭、報稅語意、地院詞彙化、移除遷移
 
 ### 問題描述
