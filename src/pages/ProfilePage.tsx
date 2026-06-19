@@ -8,8 +8,8 @@ import { Button, Card, ErrorBanner } from '../components/ui';
 export function ProfilePage() {
   const { user, isAdmin, refreshUser } = useAuth();
   const navigate = useNavigate();
-  const [displayName, setDisplayName] = useState(user?.displayName ?? '');
-  const [lawyerName, setLawyerName] = useState(user?.lawyerName ?? '');
+  // 顯示名稱與律師姓名統一為同一個「姓名」。
+  const [name, setName] = useState(user?.lawyerName || user?.displayName || '');
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -19,18 +19,17 @@ export function ProfilePage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!user) return;
-    if (!displayName.trim() || !lawyerName.trim()) {
-      setError('顯示名稱與律師姓名皆不可空白。');
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setError('姓名不可空白。');
       return;
     }
     setSaving(true);
     setError(null);
     setDone(false);
     try {
-      await updateOwnProfile(user.uid, {
-        displayName: displayName.trim(),
-        lawyerName: lawyerName.trim(),
-      });
+      // 顯示名稱與律師姓名設為一致。
+      await updateOwnProfile(user.uid, { displayName: trimmed, lawyerName: trimmed });
       await refreshUser();
       setDone(true);
     } catch (err) {
@@ -61,23 +60,12 @@ export function ProfilePage() {
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">
-              顯示名稱
-              <span className="ml-2 text-xs text-slate-400">右上角顯示用</span>
+              姓名
+              <span className="ml-2 text-xs text-slate-400">同時作為右上角顯示與案件「負責律師」</span>
             </label>
             <input
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
-              律師姓名
-              <span className="ml-2 text-xs text-slate-400">案件「負責律師」顯示用</span>
-            </label>
-            <input
-              value={lawyerName}
-              onChange={(e) => setLawyerName(e.target.value)}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
             />
           </div>
