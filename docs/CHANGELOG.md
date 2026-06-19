@@ -2,6 +2,23 @@
 
 本檔透過 git 同步，供多台電腦查閱歷史紀錄。
 
+## 2026-06-19 — 快取策略與 Google 登入彈窗修正
+
+### 問題描述
+1. 修改後瀏覽器可能讀到舊快取，抓不到最新版本。
+2. Google 登入時主控台出現 COOP 警告（window.closed/close 被封鎖）。
+
+### 根本原因 / 設計決策
+- Vite 建置已對 JS/CSS 加內容雜湊（檔名隨內容改變），但 `index.html` 若被快取會
+  指向舊資產，故需讓 index.html 不快取、雜湊資產長期快取。
+- Firebase `signInWithPopup` 需 `Cross-Origin-Opener-Policy: same-origin-allow-popups`
+  才能正常操作彈出視窗，否則瀏覽器封鎖 window.closed/close 偵測並印出警告。
+
+### 修改的檔案與內容
+- `firebase.json`：hosting 新增 `headers`——index.html `no-cache`、
+  雜湊資產 `max-age=31536000, immutable`、全站 `Cross-Origin-Opener-Policy`。
+- `vite.config.ts`：dev server 加 `Cross-Origin-Opener-Policy` header（開發時同樣修正）。
+
 ## 2026-06-19 — 新增 Google 登入並支援與帳密連結
 
 ### 問題描述
