@@ -2,6 +2,22 @@
 
 本檔透過 git 同步，供多台電腦查閱歷史紀錄。
 
+## 2026-06-19 — 首次部署上線（Firebase Hosting）
+
+### 問題描述
+於新電腦 clone 專案後，需正式部署至 Firebase，讓網站可從任何裝置開啟。
+
+### 處理內容
+- 新電腦補回未進版控的 `.env`（Firebase 網頁設定碼，專案 `case-test-e2dff`）。
+- `npm install` 安裝前端依賴；`npx firebase-tools login` 登入。
+- 部署 Firestore 安全規則：`firebase deploy --only firestore:rules`。
+- `npm run build` 產生 dist；`firebase deploy --only hosting` 部署。
+- 確認 https://case-test-e2dff.web.app 回傳 HTTP 200、標題「案件管理系統」，正式上線。
+
+### 備註
+- 後續更新網站：改完程式跑 `npm run deploy`（build + 全部 deploy）。
+- 提醒首位管理者需於 Firebase 主控台手動將自身 `role` 改為 `admin`。
+
 ## 2026-06-20 — 匯入 95 筆歷史案件、建立規格書
 
 ### 問題描述
