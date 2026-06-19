@@ -2,6 +2,19 @@
 
 本檔透過 git 同步，供多台電腦查閱歷史紀錄。
 
+## 2026-06-19 — 報稅年度改自由輸入、移除批次指派工具
+
+### 問題描述
+1. 批次重新指派負責律師工具已使用完畢，移除。
+2. 報稅年度原為固定下拉（上限約 116），需可輸入未來任意年份、不設上限。
+
+### 修改的檔案與內容
+- `config/caseOptions.ts`：移除 TAX_YEAR_OPTIONS。
+- `config/caseFields.ts`：FieldInputType 新增 'number'；報稅年度改為數字輸入（可直接打民國年，無上限）。
+- `components/CaseForm.tsx`：支援 number 輸入型別。
+- `services/caseService.ts`：移除 reassignAllCases 與 writeBatch。
+- `pages/UsersPage.tsx`：移除「批次重新指派負責律師」卡片。
+
 ## 2026-06-19 — 報稅年度、列表報稅顯示、批次重新指派負責律師
 
 ### 問題描述

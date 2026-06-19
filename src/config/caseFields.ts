@@ -5,10 +5,10 @@
  * 不需動到表單元件與列表元件的程式碼。
  */
 import type { CaseRecord } from '../types/case';
-import { TAX_STATUS_OPTIONS, TAX_YEAR_OPTIONS } from './caseOptions';
+import { TAX_STATUS_OPTIONS } from './caseOptions';
 
 /** 欄位輸入類型。 */
-export type FieldInputType = 'text' | 'textarea' | 'date' | 'datetime' | 'select' | 'tel';
+export type FieldInputType = 'text' | 'textarea' | 'date' | 'datetime' | 'select' | 'tel' | 'number';
 
 /** 詞彙清單鍵（對應 Firestore vocabularies/{key}）。 */
 export type VocabularyKey = 'caseType' | 'mandateScope' | 'court';
@@ -76,9 +76,8 @@ export const CASE_FIELDS: FieldDef[] = [
   { key: 'mandateScope', label: '委任範圍', inputType: 'select', vocabKey: 'mandateScope', allowCustom: true },
   {
     key: 'taxYear',
-    label: '報稅年度',
-    inputType: 'select',
-    options: TAX_YEAR_OPTIONS,
+    label: '報稅年度（民國年，可直接輸入）',
+    inputType: 'number',
     editableAfterClosed: true,
     showInList: true,
     listWidthClass: 'max-w-[5rem]',

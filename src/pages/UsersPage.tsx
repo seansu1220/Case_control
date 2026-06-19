@@ -14,11 +14,11 @@ import {
   updateUserRole,
   updateUserViewAllCases,
 } from '../services/userService';
-import { fetchCaseCountsByLawyer, reassignAllCases } from '../services/caseService';
+import { fetchCaseCountsByLawyer } from '../services/caseService';
 import { useAuth } from '../hooks/useAuth';
 import { ADMIN_ROLES, ROLES } from '../config/constants';
 import type { AppUser, UserRole } from '../types/user';
-import { Badge, Button, Card, CenteredSpinner, ErrorBanner } from '../components/ui';
+import { Badge, Card, CenteredSpinner, ErrorBanner } from '../components/ui';
 
 export function UsersPage() {
   const { user: currentUser } = useAuth();
@@ -176,78 +176,6 @@ export function UsersPage() {
         提示：第一位管理者 / 所有人需於 Firebase 主控台手動設定該帳號的 role（admin / owner）；
         「所有人」為受保護的最高權限，無法於此頁修改或刪除。
       </p>
-
-      <ReassignAllCard users={users} onError={setError} onDone={reload} />
     </div>
-  );
-}
-
-/** 批次將所有案件的負責律師改為指定使用者。 */
-function ReassignAllCard({
-  users,
-  onError,
-  onDone,
-}: {
-  users: AppUser[];
-  onError: (msg: string | null) => void;
-  onDone: () => Promise<void>;
-}) {
-  const [targetUid, setTargetUid] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
-
-  const candidates = users.filter((u) => u.active);
-  const target = candidates.find((u) => u.uid === targetUid);
-
-  async function handleReassign() {
-    if (!target) {
-      onError('請先選擇要指派的對象。');
-      return;
-    }
-    if (
-      !window.confirm(
-        `將「所有案件」的負責律師改為「${target.lawyerName || target.displayName}」？此動作會覆蓋每一筆案件的負責律師，無法自動復原。`,
-      )
-    )
-      return;
-    setBusy(true);
-    onError(null);
-    setResult(null);
-    try {
-      const count = await reassignAllCases(target.uid, target.lawyerName || target.displayName);
-      setResult(`已將 ${count} 筆案件的負責律師改為「${target.lawyerName || target.displayName}」。`);
-      await onDone();
-    } catch (err) {
-      onError(`批次指派失敗：${(err as Error).message}`);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Card className="space-y-3 border-amber-200 bg-amber-50">
-      <h2 className="text-base font-semibold text-slate-700">批次重新指派負責律師</h2>
-      <p className="text-sm text-slate-600">
-        將「所有案件」的負責律師一次改為指定的人。常用於轉移承辦或修正匯入時的負責律師。
-      </p>
-      <div className="flex flex-wrap items-center gap-2">
-        <select
-          value={targetUid}
-          onChange={(e) => setTargetUid(e.target.value)}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
-        >
-          <option value="">— 選擇要指派的對象 —</option>
-          {candidates.map((u) => (
-            <option key={u.uid} value={u.uid}>
-              {u.lawyerName || u.displayName}（{u.email}）
-            </option>
-          ))}
-        </select>
-        <Button onClick={handleReassign} disabled={busy || !targetUid}>
-          {busy ? '指派中…' : '將所有案件指派給此人'}
-        </Button>
-      </div>
-      {result && <p className="text-sm text-green-700">{result}</p>}
-    </Card>
   );
 }

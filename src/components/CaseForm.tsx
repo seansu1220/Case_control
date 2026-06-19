@@ -126,7 +126,14 @@ function FieldInput({
     );
   }
 
-  const htmlType = field.inputType === 'tel' ? 'tel' : field.inputType === 'date' ? 'date' : 'text';
+  const htmlType =
+    field.inputType === 'tel'
+      ? 'tel'
+      : field.inputType === 'date'
+        ? 'date'
+        : field.inputType === 'number'
+          ? 'number'
+          : 'text';
   return <input {...common} type={htmlType} onChange={(e) => onChange(field.key, e.target.value)} />;
 }
 
