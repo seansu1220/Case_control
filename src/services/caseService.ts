@@ -16,6 +16,7 @@ import {
   serverTimestamp,
   updateDoc,
   where,
+  writeBatch,
   type DocumentData,
   type DocumentSnapshot,
   type QueryDocumentSnapshot,
@@ -60,6 +61,7 @@ function mapCaseData(id: string, data: DocumentData): CaseRecord {
     court: data.court ?? '',
     mandateDate: data.mandateDate ?? '',
     mandateScope: data.mandateScope ?? '',
+    taxYear: data.taxYear ?? '',
     taxStatus: data.taxStatus ?? '',
     responsibleLawyerUid: data.responsibleLawyerUid ?? '',
     responsibleLawyerName: data.responsibleLawyerName ?? '',
@@ -174,6 +176,30 @@ export async function updateCaseFields(
 /** 刪除案件（權限由安全規則把關：律師僅能刪自己的）。 */
 export async function deleteCase(caseId: string): Promise<void> {
   await deleteDoc(doc(db, COLLECTIONS.cases, caseId));
+}
+
+/**
+ * 批次將「所有案件」的負責律師改為指定對象（限管理者，安全規則把關）。
+ * 以 writeBatch 分批（每批上限 500）提交。
+ * @returns 已更新的案件數
+ */
+export async function reassignAllCases(targetUid: string, targetName: string): Promise<number> {
+  const snapshot = await getDocs(collection(db, COLLECTIONS.cases));
+  const docs = snapshot.docs;
+  let updated = 0;
+  for (let i = 0; i < docs.length; i += 400) {
+    const batch = writeBatch(db);
+    for (const docSnap of docs.slice(i, i + 400)) {
+      batch.update(docSnap.ref, {
+        responsibleLawyerUid: targetUid,
+        responsibleLawyerName: targetName,
+        updatedAt: serverTimestamp(),
+      });
+      updated += 1;
+    }
+    await batch.commit();
+  }
+  return updated;
 }
 
 /** 依輸入組出一筆進度紀錄（time/closing 為選填）。 */

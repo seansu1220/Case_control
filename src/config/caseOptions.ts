@@ -43,3 +43,14 @@ export const MANDATE_SCOPE_OPTIONS = [
  * 空字串（未填）於篩選與語意上一律視為「未申報」。
  */
 export const TAX_STATUS_OPTIONS = ['', '已申報', '免申報', '未申報'] as const;
+
+/**
+ * 報稅年度選項（民國年）。
+ * 自動產生：今年+1 起往前 7 年，避免日後過期；空字串為未填。
+ */
+export const TAX_YEAR_OPTIONS: readonly string[] = (() => {
+  const rocYear = new Date().getFullYear() - 1911;
+  const years: string[] = [];
+  for (let y = rocYear + 1; y >= rocYear - 6; y--) years.push(String(y));
+  return ['', ...years];
+})();

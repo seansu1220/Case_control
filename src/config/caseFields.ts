@@ -5,7 +5,7 @@
  * 不需動到表單元件與列表元件的程式碼。
  */
 import type { CaseRecord } from '../types/case';
-import { TAX_STATUS_OPTIONS } from './caseOptions';
+import { TAX_STATUS_OPTIONS, TAX_YEAR_OPTIONS } from './caseOptions';
 
 /** 欄位輸入類型。 */
 export type FieldInputType = 'text' | 'textarea' | 'date' | 'datetime' | 'select' | 'tel';
@@ -74,6 +74,15 @@ export const CASE_FIELDS: FieldDef[] = [
   { key: 'court', label: '地院/地檢', inputType: 'select', vocabKey: 'court', allowCustom: true, showInList: true, listWidthClass: 'max-w-[7rem]' },
   { key: 'mandateDate', label: '委任狀遞出時間', inputType: 'datetime' },
   { key: 'mandateScope', label: '委任範圍', inputType: 'select', vocabKey: 'mandateScope', allowCustom: true },
+  {
+    key: 'taxYear',
+    label: '報稅年度',
+    inputType: 'select',
+    options: TAX_YEAR_OPTIONS,
+    editableAfterClosed: true,
+    showInList: true,
+    listWidthClass: 'max-w-[5rem]',
+  },
   {
     key: 'taxStatus',
     label: '報稅',

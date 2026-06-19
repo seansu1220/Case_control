@@ -2,6 +2,28 @@
 
 本檔透過 git 同步，供多台電腦查閱歷史紀錄。
 
+## 2026-06-19 — 報稅年度、列表報稅顯示、批次重新指派負責律師
+
+### 問題描述
+1. 新增/編輯案件需可選擇「報稅年度」。
+2. 列表需顯示報稅年度與是否已報稅。
+3. 需能將所有案件的負責律師批次改為指定對象。
+
+### 設計決策
+- 報稅年度以民國年存字串（如「113」）；選項自今年+1 起往前 7 年動態產生，免過期。
+- 是否已報稅由 taxStatus 推導徽章：已申報→已報稅、免申報→免申報、其餘→未報稅。
+- 批次指派採「客戶端管理者執行」：UsersPage 提供工具，選對象後以 writeBatch
+  分批更新所有案件的 responsibleLawyerUid/Name（安全規則允許管理者寫入全部案件），
+  免服務金鑰；對象從現有使用者清單選取以確保 UID 正確。
+
+### 修改的檔案與內容
+- `types/case.ts`：新增 taxYear。
+- `config/caseOptions.ts`：新增 TAX_YEAR_OPTIONS（民國年動態產生）。
+- `config/caseFields.ts`：新增報稅年度欄位（select、結案後可改、列表顯示）。
+- `services/caseService.ts`：mapping 加 taxYear；新增 reassignAllCases（writeBatch）。
+- `pages/CaseListPage.tsx`：新增「報稅」徽章欄（是否已報稅）；報稅年度隨欄位顯示。
+- `pages/UsersPage.tsx`：新增「批次重新指派負責律師」卡片。
+
 ## 2026-06-19 — Google 登入強制選擇帳號
 
 ### 問題描述

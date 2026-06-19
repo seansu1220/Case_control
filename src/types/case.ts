@@ -59,7 +59,9 @@ export interface CaseRecord {
   mandateDate: string;
   /** 委任範圍（選項存於 vocabularies/mandateScope）。 */
   mandateScope: string;
-  /** 報稅（結案後仍可修改的唯一欄位）。 */
+  /** 報稅年度（民國年字串，如「113」）。 */
+  taxYear: string;
+  /** 報稅狀態（結案後仍可修改）。 */
   taxStatus: string;
   // 註：原「處理 / 結果 / 狀態」欄位已併入進度管理（progressEntries），不再為獨立欄位。
 

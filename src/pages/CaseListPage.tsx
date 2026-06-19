@@ -27,6 +27,13 @@ function latestProgress(record: CaseRecord): string {
   return `${latest.date}　${latest.content}`;
 }
 
+/** 由報稅狀態判斷顯示徽章（是否已報稅）。 */
+function taxBadge(taxStatus: string): { label: string; tone: 'green' | 'slate' | 'amber' } {
+  if (taxStatus === '已申報') return { label: '已報稅', tone: 'green' };
+  if (taxStatus === '免申報') return { label: '免申報', tone: 'slate' };
+  return { label: '未報稅', tone: 'amber' };
+}
+
 /** 取陣列中非空且去重的值，排序後回傳（供篩選選項）。 */
 function distinctValues(cases: CaseRecord[], pick: (c: CaseRecord) => string): string[] {
   return Array.from(new Set(cases.map(pick).map((v) => v.trim()).filter(Boolean))).sort((a, b) =>
@@ -327,6 +334,7 @@ export function CaseListPage() {
                     {field.label}
                   </th>
                 ))}
+                <th className="whitespace-nowrap px-4 py-3">報稅</th>
                 {canSeeOthers && <th className="whitespace-nowrap px-4 py-3">負責律師</th>}
                 <th className="whitespace-nowrap px-4 py-3">結案</th>
               </tr>
@@ -350,6 +358,12 @@ export function CaseListPage() {
                   {POST_FIELDS.map((field) => (
                     <ListCell key={field.key} field={field} record={record} />
                   ))}
+                  <td className="px-4 py-3">
+                    {(() => {
+                      const t = taxBadge(record.taxStatus);
+                      return <Badge tone={t.tone}>{t.label}</Badge>;
+                    })()}
+                  </td>
                   {canSeeOthers && (
                     <td
                       className="max-w-[7rem] truncate px-4 py-3 text-slate-700"
