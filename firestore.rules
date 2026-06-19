@@ -1,0 +1,67 @@
+rules_version = '2';
+
+// Firestore 安全規則：權限的「最終防線」。
+// 即使前端被繞過，下列規則仍會在資料庫層阻擋未授權的讀寫。
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function callerData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && callerData().role == 'admin';
+    }
+
+    // ── 使用者 ──
+    match /users/{uid} {
+      // 只能讀自己的資料；管理者可讀全部。
+      allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+
+      // 自行註冊：只能建立自己的文件，且角色強制為 lawyer、預設啟用，
+      // 防止自我提權為管理者。
+      allow create: if isSignedIn()
+        && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && request.resource.data.role == 'lawyer'
+        && request.resource.data.active == true;
+
+      // 角色 / 律師姓名 / 啟用狀態僅限管理者調整。
+      allow update, delete: if isAdmin();
+    }
+
+    // ── 案件 ──
+    match /cases/{caseId} {
+      function isOwner() {
+        return isSignedIn() && resource.data.responsibleLawyerUid == request.auth.uid;
+      }
+
+      // 律師只能讀自己負責的案件；管理者可讀全部。
+      allow read: if isAdmin() || isOwner();
+
+      // 新增：建立者必須是自己；負責律師須為自己，或由管理者代為指派。
+      allow create: if isSignedIn()
+        && request.resource.data.createdByUid == request.auth.uid
+        && (isAdmin() || request.resource.data.responsibleLawyerUid == request.auth.uid);
+
+      // 刪除：本人或管理者（律師僅能刪自己的）。
+      allow delete: if isAdmin() || isOwner();
+
+      // 更新：
+      //  - 管理者：不受限（含重新開啟案件）。
+      //  - 擁有者且未結案：可自由編輯。
+      //  - 擁有者且已結案：僅允許修改 taxStatus（與 updatedAt）。
+      allow update: if isAdmin()
+        || (isOwner() && resource.data.closed == false)
+        || (isOwner()
+            && resource.data.closed == true
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['taxStatus', 'updatedAt']));
+    }
+  }
+}

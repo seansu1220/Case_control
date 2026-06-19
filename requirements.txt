@@ -1,0 +1,4 @@
+# 匯入工具（tools/import_cases.py）所需套件
+# 首次執行 import_cases.py 會自動檢查並安裝下列依賴
+openpyxl>=3.1
+firebase-admin>=6.5

@@ -1,0 +1,91 @@
+/**
+ * 案件欄位定義（配置驅動）。
+ *
+ * 表單與列表畫面皆從這份定義產生，新增/調整欄位只改這裡，
+ * 不需動到表單元件與列表元件的程式碼。
+ */
+import type { CaseRecord } from '../types/case';
+import { CASE_TYPE_OPTIONS, MANDATE_SCOPE_OPTIONS, TAX_STATUS_OPTIONS } from './caseOptions';
+
+/** 欄位輸入類型。 */
+export type FieldInputType = 'text' | 'textarea' | 'date' | 'select' | 'tel';
+
+/** 可由表單編輯的案件欄位鍵（排除系統欄位與進度紀錄）。 */
+export type EditableCaseKey = Exclude<
+  keyof CaseRecord,
+  | 'id'
+  | 'progressEntries'
+  | 'closed'
+  | 'closedAt'
+  | 'createdByUid'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'responsibleLawyerUid'
+  | 'responsibleLawyerName'
+>;
+
+/** 單一欄位的定義。 */
+export interface FieldDef {
+  key: EditableCaseKey;
+  label: string;
+  inputType: FieldInputType;
+  /** select 類型的選項。 */
+  options?: readonly string[];
+  /** 是否必填。 */
+  required?: boolean;
+  /** 是否在案件列表（表格）顯示。 */
+  showInList?: boolean;
+  /**
+   * 結案後是否仍可編輯。
+   * 依需求：結案後僅「報稅」可改，其餘鎖定。
+   */
+  editableAfterClosed?: boolean;
+}
+
+/** 案件所有可編輯欄位定義，順序即表單呈現順序。 */
+export const CASE_FIELDS: FieldDef[] = [
+  // 收件日沿用民國格式自由文字（如 111.05.09），故為 text；日期選擇器用於「進度管理」。
+  { key: 'receiptDate', label: '收件日', inputType: 'text', showInList: true },
+  { key: 'caseType', label: '類型', inputType: 'select', options: CASE_TYPE_OPTIONS, required: true, showInList: true },
+  { key: 'client', label: '當事人', inputType: 'text', required: true, showInList: true },
+  { key: 'opposingParty', label: '對造', inputType: 'textarea' },
+  { key: 'caseReason', label: '案由', inputType: 'text', showInList: true },
+  { key: 'phone', label: '電話', inputType: 'tel' },
+  { key: 'caseNumber', label: '案號', inputType: 'textarea', showInList: true },
+  { key: 'address', label: '住址', inputType: 'textarea' },
+  { key: 'handling', label: '處理', inputType: 'textarea' },
+  { key: 'schedule', label: '日程/理由', inputType: 'textarea' },
+  { key: 'court', label: '地院/地檢', inputType: 'text', showInList: true },
+  { key: 'mandateDate', label: '委任狀遞出時間', inputType: 'text' },
+  { key: 'mandateScope', label: '委任範圍', inputType: 'select', options: MANDATE_SCOPE_OPTIONS },
+  { key: 'result', label: '結果', inputType: 'text' },
+  { key: 'status', label: '狀態', inputType: 'text', showInList: true },
+  {
+    key: 'taxStatus',
+    label: '報稅',
+    inputType: 'select',
+    options: TAX_STATUS_OPTIONS,
+    editableAfterClosed: true,
+  },
+];
+
+/** 列表顯示用的欄位子集。 */
+export const LIST_FIELDS: FieldDef[] = CASE_FIELDS.filter((field) => field.showInList);
+
+/** 建立空白案件草稿（所有欄位預設空字串）。 */
+export function createEmptyCaseValues(): Record<EditableCaseKey, string> {
+  const values = {} as Record<EditableCaseKey, string>;
+  for (const field of CASE_FIELDS) {
+    values[field.key] = '';
+  }
+  return values;
+}
+
+/** 從案件記錄抽出可編輯欄位的值（供編輯表單初始化）。 */
+export function extractEditableValues(record: CaseRecord): Record<EditableCaseKey, string> {
+  const values = createEmptyCaseValues();
+  for (const field of CASE_FIELDS) {
+    values[field.key] = record[field.key] ?? '';
+  }
+  return values;
+}

@@ -1,0 +1,5 @@
+{
+  "comment": "案件查詢排序於用戶端完成，使用者清單僅用單欄位 orderBy，故不需複合索引。",
+  "indexes": [],
+  "fieldOverrides": []
+}
